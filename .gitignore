@@ -1,0 +1,35 @@
+# Mac OS X cruft
+*.pbxuser
+*.mode1v3
+*.mode2v3
+*.user
+*.xcworkspace/
+xcuserdata/
+.DS_Store
+
+build/
+lib/
+Eigen/
+
+*.lib
+*.a
+*.dll
+*.so
+
+# Windows cruft
+*.suo
+*.ncb
+*.sdf
+*.opensdf
+Debug/
+Release/
+ipch/
+
+# doxygen generated files
+docs/html
+docs/doxygen/cinder.tag
+
+# solution files
+vs*/
+xcode*/
+assimp/contrib/gtest/
