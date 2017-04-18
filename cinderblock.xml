@@ -6,7 +6,7 @@
 	author="Vinjn Zhang"
 	license="BSD"
 	summary="Development block for Cinder asset loading, skeletal animations and mesh skinning"
-	git="git://github.com/vnm-interactive/Cinder-Assimp.git"
+	git="git://github.com/jing-interactive/Cinder-Assimp.git"
 	version="0.1"
 	libraryUrl="www.libcinder.org"
     >
@@ -19,39 +19,33 @@
         <platform config="debug">
             <staticLibrary>lib/macos/libassimp-d.a</staticLibrary>
             <staticLibrary>lib/macos/libcinder-assimp-d.a</staticLibrary>
-            <staticLibrary>lib/macos/libConvertUTF-d.a</staticLibrary>
         </platform>
 
         <platform config="release">
             <staticLibrary>lib/macos/libassimp.a</staticLibrary>
             <staticLibrary>lib/macos/libcinder-assimp.a</staticLibrary>
-            <staticLibrary>lib/macos/libConvertUTF.a</staticLibrary>
         </platform>
     </platform>
 	<platform os="ios">
         <platform config="debug">
             <staticLibrary>lib/ios/libassimp-d.a</staticLibrary>
             <staticLibrary>lib/ios/libcinder-assimp-d.a</staticLibrary>
-            <staticLibrary>lib/ios/libConvertUTF-d.a</staticLibrary>
         </platform>
 
         <platform config="release">
             <staticLibrary>lib/ios/libassimp.a</staticLibrary>
             <staticLibrary>lib/ios/libcinder-assimp.a</staticLibrary>
-            <staticLibrary>lib/ios/libConvertUTF.a</staticLibrary>
         </platform>
 	</platform>
     <platform os="msw">
         <platform config="debug">
             <staticLibrary>lib/msw/$(PlatformTarget)/assimp-d.lib</staticLibrary>
             <staticLibrary>lib/msw/$(PlatformTarget)/cinder-assimp-d.lib</staticLibrary>
-            <staticLibrary>lib/msw/$(PlatformTarget)/ConvertUTF-d.lib</staticLibrary>
         </platform>
 
         <platform config="release">
             <staticLibrary>lib/msw/$(PlatformTarget)/assimp.lib</staticLibrary>
             <staticLibrary>lib/msw/$(PlatformTarget)/cinder-assimp.lib</staticLibrary>
-            <staticLibrary>lib/msw/$(PlatformTarget)/ConvertUTF.lib</staticLibrary>
         </platform>
     </platform>
 </block>
