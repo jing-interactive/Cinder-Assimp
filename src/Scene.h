@@ -19,13 +19,13 @@
 
 #include <vector>
 
-#include "../assimp--3.0.1270/include/assimp/types.h"
+#include "../assimp/include/assimp/types.h"
 
 #include "cinder/Cinder.h"
 #include "cinder/Color.h"
 #include "cinder/AxisAlignedBox.h"
 
-#include "MeshNode.h"
+#include "../../Cinder-Nodes/include/Node3D.h"
 
 // forward declaration
 struct aiNode;
@@ -39,46 +39,52 @@ namespace Assimp
 namespace cinder 
 {
     class TriMesh;
-    namespace gl 
-    {
-        class Material; 
-        class Texture;
-    }
 } // namespace cinder
 
 namespace cinder { namespace assimp {
 
-inline Vec3f fromAssimp( const aiVector3D &v )
+    struct Material
+    {
+        Color			Ambient;
+        Color			Diffuse;
+        Color			Specular;
+        float			Shininess;
+        Color			Emission;
+        GLenum			Face;
+    };
+
+inline vec3 fromAssimp( const aiVector3D &v )
 {
-    return Vec3f( v.x, v.y, v.z );
+    return vec3( v.x, v.y, v.z );
 }
 
-inline aiVector3D toAssimp( const Vec3f &v )
+inline aiVector3D toAssimp( const vec3 &v )
 {
     return aiVector3D( v.x, v.y, v.z );
 }
 
-inline Quatf fromAssimp( const aiQuaternion &q )
+inline quat fromAssimp( const aiQuaternion &q )
 {
-    return Quatf( q.w, q.x, q.y, q.z );
+    return quat( q.w, q.x, q.y, q.z );
 }
 
-inline Matrix44f fromAssimp( const aiMatrix4x4 &m )
+inline mat4 fromAssimp( const aiMatrix4x4 &m )
 {
-	return Matrix44f( &m.a1, true );
+	return glm::make_mat4( &m.a1 );
 }
 
-inline aiMatrix4x4 toAssimp( const Matrix44f &m )
+inline aiMatrix4x4 toAssimp( const mat4 &m )
 {
-	return aiMatrix4x4( m.m00, m.m01, m.m02, m.m03,
-						m.m10, m.m11, m.m12, m.m13,
-						m.m20, m.m21, m.m22, m.m23,
-						m.m30, m.m31, m.m32, m.m33 );
+    return aiMatrix4x4(
+        m[0][0], m[0][1], m[0][2], m[0][3],
+        m[1][0], m[1][1], m[1][2], m[1][3],
+        m[2][0], m[2][1], m[2][2], m[2][3],
+        m[3][0], m[3][1], m[3][2], m[3][3]);
 }
 
-inline aiQuaternion toAssimp( const Quatf &q )
+inline aiQuaternion toAssimp( const quat &q )
 {
-    return aiQuaternion( q.w, q.v.x, q.v.y, q.v.z );
+    return aiQuaternion( q.w, q.x, q.y, q.z );
 }
 
 inline ColorAf fromAssimp( const aiColor4D &c )
@@ -113,6 +119,14 @@ private:
 class Mesh;
 typedef std::shared_ptr< Mesh > MeshRef;
 
+typedef std::shared_ptr< class MeshNode > MeshNodeRef;
+typedef std::weak_ptr< class MeshNode > MeshNodeWeakRef;
+
+struct MeshNode : public nodes::Node3D
+{
+    std::vector< std::shared_ptr< class Mesh > > mMeshes;
+};
+
 class Scene
 {
 public:
@@ -127,34 +141,26 @@ public:
     void draw();
 
     //! Returns the bounding box of the static, not skinned mesh.
-    AxisAlignedBox3f getBoundingBox() const { return mBoundingBox; }
+    AxisAlignedBox getBoundingBox() const { return mBoundingBox; }
 
     //! Sets the orientation of this node via a quaternion.
-    void setNodeOrientation( const std::string &name, const Quatf &rot );
+    void setNodeOrientation( const std::string &name, const quat &rot );
     //! Returns a quaternion representing the orientation of the node called \a name.
-    Quatf getNodeOrientation( const std::string &name );
+    quat getNodeOrientation( const std::string &name );
 
     //! Returns the node called \a name.
     MeshNodeRef getAssimpNode( const std::string &name );
-    //! Returns the node called \a name.
-    const MeshNodeRef getAssimpNode( const std::string &name ) const;
 
     //! Returns the total number of meshes contained by the node called \a name.
     size_t getAssimpNodeNumMeshes( const std::string &name );
     //! Returns the \a n'th cinder::TriMesh contained by the node called \a name.
-    TriMesh &getAssimpNodeMesh( const std::string &name, size_t n = 0 );
-    //! Returns the \a n'th cinder::TriMesh contained by the node called \a name.
-    const TriMesh &getAssimpNodeMesh( const std::string &name, size_t n = 0 ) const;
+    TriMesh& getAssimpNodeMesh( const std::string &name, size_t n = 0 );
 
     //! Returns the texture of the \a n'th mesh in the node called \a name.
-    gl::Texture &getAssimpNodeTexture( const std::string &name, size_t n = 0 );
-    //! Returns the texture of the \a n'th mesh in the node called \a name.
-    const gl::Texture &getAssimpNodeTexture( const std::string &name, size_t n = 0 ) const;
+    gl::TextureRef getAssimpNodeTexture( const std::string &name, size_t n = 0 );
 
     //! Returns the material of the \a n'th mesh in the node called \a name.
-    gl::Material &getAssimpNodeMaterial( const std::string &name, size_t n = 0 );
-    //! Returns the material of the \a n'th mesh in the node called \a name.
-    const gl::Material &getAssimpNodeMaterial( const std::string &name, size_t n = 0 ) const;
+    Material& getAssimpNodeMaterial( const std::string &name, size_t n = 0 );
 
     //! Returns all node names in the model in a std::vector as std::string's.
     const std::vector< std::string > &getNodeNames() { return mNodeNames; }
@@ -183,13 +189,9 @@ public:
     size_t getNumMeshes() const { return mMeshes.size(); }
     //! Returns the \a n'th mesh in the model.
     TriMesh &getMesh( size_t n );
-    //! Returns the \a n'th mesh in the model.
-    const TriMesh &getMesh( size_t n ) const;
 
     //! Returns the texture of the \a n'th mesh in the model.
-    gl::Texture &getTexture( size_t n );
-    //! Returns the texture of the \a n'th mesh in the model.
-    const gl::Texture &getTexture( size_t n ) const;
+    gl::TextureRef getTexture( size_t n );
 
     //! Returns the number of animations in the scene.
     size_t getNumAnimations() const;
@@ -209,18 +211,18 @@ private:
     MeshRef convertAiMesh( const aiMesh *mesh );
 
     void calculateDimensions();
-    void calculateBoundingBox( Vec3f *min, Vec3f *max );
+    void calculateBoundingBox( vec3 *min, vec3 *max );
     void calculateBoundingBoxForNode( const aiNode *nd, aiVector3D *min, aiVector3D *max, aiMatrix4x4 *trafo );
 
     void updateAnimation( size_t animationIndex, double currentTime );
     void updateSkinning();
     void updateMeshes();
 
-    std::shared_ptr< Assimp::Importer > mImporterRef; // mScene will be destroyed along with the Importer object
+    std::unique_ptr< Assimp::Importer > mImporterRef; // mScene will be destroyed along with the Importer object
     fs::path mFilePath; /// model path
     const aiScene *mScene;
 
-    AxisAlignedBox3f mBoundingBox;
+    AxisAlignedBox mBoundingBox;
 
     MeshNodeRef mRootNode; /// root node of scene
 

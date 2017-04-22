@@ -88,7 +88,8 @@ void MultipleAnimationsDemo::setup()
 	mDrawLabels = false;
 	mParams.addParam( "Draw Labels", &mDrawLabels );
 	mEnableWireframe = false;
-	mParams.addParam( "Wireframe", &mEnableWireframe );
+    mParams.addParam("Wireframe", &mEnableWireframe);
+    mParams.addParam("ScaleFactor", &mScaleFactor);
 	mParams.addSeparator();
 	mAnimId = 0;
 	mParams.addParam( "Cycle Id", &mAnimId ).min( 0 ).max( 14 );
@@ -96,15 +97,11 @@ void MultipleAnimationsDemo::setup()
 	mParams.addButton( "Loop Anim", std::bind( &MultipleAnimationsDemo::loopAnim, this) );
 	mParams.addButton( "Stop Anim", std::bind( &MultipleAnimationsDemo::stopAnim, this) );
 	
-	mActor = SkeletalMesh::create( AssimpLoader( loadAsset( "cu_puppy_corgi.fbx" ) ) );
+	mActor = SkeletalMesh::create( AssimpLoader( loadAsset( "astroboy_walk.dae" ) ) );
 	
 	
 	// Blend both animations with a factor of one since they affect independent bones (lower vs upper body).
-	// mSkeletalTriMesh->getSkeleton()->loopAnim( { {0, 1.0f}, {7, 1.0f} } ); // this beautiful C++11 syntax is not supported on older version of vc11
-	auto weights = std::unordered_map<int, float>();
-	weights[0] = 1.0f;
-	weights[7] = 1.0f;
-	mActor->loopAnim( app::timeline(), weights );
+    mActor->loopAnim(app::timeline(), { { 0, 1.0f }, { 7, 1.0f } });
 }
 
 void MultipleAnimationsDemo::fileDrop( FileDropEvent event )
