@@ -25,6 +25,9 @@
 #include "../assimp/include/assimp/scene.h"
 #include "../assimp/include/assimp/postprocess.h"
 
+#include "../assimp/include/assimp/Logger.hpp"
+#include "../assimp/include/assimp/DefaultLogger.hpp"
+
 #include "cinder/app/App.h"
 #include "cinder/ImageIo.h"
 #include "cinder/CinderMath.h"
@@ -32,6 +35,7 @@
 #include "cinder/TriMesh.h"
 #include "cinder/gl/draw.h"
 #include "cinder/gl/Texture.h"
+#include "cinder/Log.h"
 
 #include "Scene.h"
 
@@ -88,6 +92,42 @@ inline std::string fromAssimp(const aiString &s)
 
 namespace assimp
 {
+    struct CinderLogger : public ::Assimp::Logger
+    {
+        void OnDebug(const char* message) {
+            CI_LOG_D(message);
+        }
+
+        void OnInfo(const char* message) {
+            CI_LOG_I(message);
+        }
+
+        void OnWarn(const char* message) {
+            CI_LOG_W(message);
+        }
+
+        void OnError(const char* message) {
+            CI_LOG_E(message);
+        }
+
+        bool attachStream(::Assimp::LogStream *pStream, unsigned int severity) {
+            (void)pStream; (void)severity; //this avoids compiler warnings
+            return true;
+        }
+
+        bool detatchStream(::Assimp::LogStream *pStream, unsigned int severity) {
+            (void)pStream; (void)severity; //this avoids compiler warnings
+            return true;
+        }
+
+    };
+    CinderLogger ciLogger;
+
+    void setupLogger()
+    {
+        ::Assimp::DefaultLogger::set(&ciLogger);
+    }
+
     class Mesh
     {
     public:

@@ -47,6 +47,8 @@ using namespace ci;
 
 namespace assimp
 {
+    void setupLogger();
+
     struct Material
     {
         Color			Ambient;
