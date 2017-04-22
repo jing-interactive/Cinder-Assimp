@@ -109,13 +109,9 @@ namespace assimp
 
         //! Enables/disables skinning, when the model's bones distort the vertices.
         void enableSkinning(bool enable = true);
-        //! Disables skinning, when the model's bones distort the vertices.
-        void disableSkinning() { enableSkinning(false); }
 
         //! Enables/disables animation.
         void enableAnimation(bool enable = true) { mAnimationEnabled = enable; }
-        //! Disables animation.
-        void disableAnimation() { mAnimationEnabled = false; }
 
         //! Returns the total number of meshes in the model.
         size_t getNumMeshes() const { return mMeshes.size(); }
