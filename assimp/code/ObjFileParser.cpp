@@ -146,7 +146,9 @@ void ObjFileParser::parseFile( IOStreamBuffer<char> &streamBuffer ) {
             progressCounter++;
             m_progress->UpdateFileRead( progressOffset + processed * 2, progressTotal );
         }
+#if 0
 		ignoreNewLines(streamBuffer, buffer);
+#endif
         // parse line
         switch (*m_DataIt) {
         case 'v': // Parse a vertex texture coordinate
