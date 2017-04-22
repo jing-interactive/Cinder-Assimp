@@ -96,7 +96,7 @@ namespace assimp
         //! Returns the total number of meshes contained by the node called \a name.
         size_t getAssimpNodeNumMeshes(const std::string &name);
         //! Returns the \a n'th cinder::TriMesh contained by the node called \a name.
-        TriMesh& getAssimpNodeMesh(const std::string &name, size_t n = 0);
+        TriMeshRef getAssimpNodeMesh(const std::string &name, size_t n = 0);
 
         //! Returns the texture of the \a n'th mesh in the node called \a name.
         gl::TextureRef getAssimpNodeTexture(const std::string &name, size_t n = 0);
@@ -106,16 +106,6 @@ namespace assimp
 
         //! Returns all node names in the model in a std::vector as std::string's.
         const std::vector< std::string > &getNodeNames() { return mNodeNames; }
-
-        //! Enables/disables the usage of materials during draw.
-        void enableMaterials(bool enable = true) { mMaterialsEnabled = enable; }
-        //! Disables the usage of materials during draw.
-        void disableMaterials() { mMaterialsEnabled = false; }
-
-        //! Enables/disables the usage of textures during draw.
-        void enableTextures(bool enable = true) { mTexturesEnabled = enable; }
-        //! Disables the usage of textures during draw.
-        void disableTextures() { mTexturesEnabled = false; }
 
         //! Enables/disables skinning, when the model's bones distort the vertices.
         void enableSkinning(bool enable = true);
@@ -130,7 +120,7 @@ namespace assimp
         //! Returns the total number of meshes in the model.
         size_t getNumMeshes() const { return mMeshes.size(); }
         //! Returns the \a n'th mesh in the model.
-        TriMesh &getMesh(size_t n);
+        TriMeshRef getMesh(size_t n);
 
         //! Returns the texture of the \a n'th mesh in the model.
         gl::TextureRef getTexture(size_t n);
@@ -173,8 +163,6 @@ namespace assimp
         std::vector< std::string > mNodeNames;
         std::map< std::string, MeshNodeRef > mNodeMap;
 
-        bool mMaterialsEnabled;
-        bool mTexturesEnabled;
         bool mSkinningEnabled;
         bool mAnimationEnabled;
 

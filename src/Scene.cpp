@@ -28,14 +28,17 @@
 #include "../assimp/include/assimp/Logger.hpp"
 #include "../assimp/include/assimp/DefaultLogger.hpp"
 
+#include "../../Cinder-VNM/include/AssetManager.h"
+
 #include "cinder/app/App.h"
-#include "cinder/ImageIo.h"
 #include "cinder/CinderMath.h"
 #include "cinder/Utilities.h"
 #include "cinder/TriMesh.h"
+#include "cinder/Log.h"
+
 #include "cinder/gl/draw.h"
 #include "cinder/gl/Texture.h"
-#include "cinder/Log.h"
+#include "cinder/gl/scoped.h"
 
 #include "Scene.h"
 
@@ -128,39 +131,61 @@ namespace assimp
         ::Assimp::DefaultLogger::set(&ciLogger);
     }
 
+    const int kTextureTypeCount = aiTextureType_REFLECTION;
+
+    enum BlendMode
+    {
+        BlendOff,
+        BlendDefault,
+        BlendAdditive,
+    };
+
     class Mesh
     {
     public:
         const aiMesh *mAiMesh;
 
-        gl::TextureRef mTexture;
+        gl::TextureRef mTextures[kTextureTypeCount];
 
         std::vector< uint32_t > mIndices;
 
         Material mMaterial;
         bool mTwoSided;
 
+        BlendMode blendMode = BlendOff;
+
         std::vector< aiVector3D > mAnimatedPos;
         std::vector< aiVector3D > mAnimatedNorm;
 
         std::string mName;
-        TriMesh mCachedTriMesh;
+        TriMeshRef mCachedTriMesh;
         bool mValidCache;
     };
 
-    static void fromAssimp(const aiMesh *aim, TriMesh& cim)
+    static void fromAssimp(const aiMesh *aim, TriMeshRef& cim)
     {
+        TriMesh::Format format;
+        {
+
+            if (aim->HasPositions())            format.positions();
+            if (aim->HasNormals())              format.normals();
+            if (aim->GetNumColorChannels() > 0) format.colors(4);
+            if (aim->GetNumUVChannels() > 0)    format.texCoords0();
+        }
+
+        cim = TriMesh::create(format);
+
         // copy vertices
         for (unsigned i = 0; i < aim->mNumVertices; ++i)
         {
-            cim.appendPosition(fromAssimp(aim->mVertices[i]));
+            cim->appendPosition(fromAssimp(aim->mVertices[i]));
         }
 
         if (aim->HasNormals())
         {
             for (unsigned i = 0; i < aim->mNumVertices; ++i)
             {
-                cim.appendNormal(fromAssimp(aim->mNormals[i]));
+                cim->appendNormal(fromAssimp(aim->mNormals[i]));
             }
         }
 
@@ -170,8 +195,7 @@ namespace assimp
         {
             for (unsigned i = 0; i < aim->mNumVertices; ++i)
             {
-                cim.appendTexCoord(vec2(aim->mTextureCoords[0][i].x,
-                    aim->mTextureCoords[0][i].y));
+                cim->appendTexCoord({ aim->mTextureCoords[0][i].x, aim->mTextureCoords[0][i].y });
             }
         }
 
@@ -180,7 +204,7 @@ namespace assimp
         {
             for (unsigned i = 0; i < aim->mNumVertices; ++i)
             {
-                cim.appendColorRgba(fromAssimp(aim->mColors[0][i]));
+                cim->appendColorRgba(fromAssimp(aim->mColors[0][i]));
             }
         }
 
@@ -193,15 +217,13 @@ namespace assimp
                     toString< unsigned >(i));
             }
 
-            cim.appendTriangle(aim->mFaces[i].mIndices[0],
+            cim->appendTriangle(aim->mFaces[i].mIndices[0],
                 aim->mFaces[i].mIndices[1],
                 aim->mFaces[i].mIndices[2]);
         }
     }
 
     Scene::Scene(fs::path filename) :
-        mMaterialsEnabled(false),
-        mTexturesEnabled(true),
         mSkinningEnabled(false),
         mAnimationEnabled(false),
         mFilePath(filename),
@@ -210,7 +232,7 @@ namespace assimp
         // FIXME: aiProcessPreset_TargetRealtime_MaxQuality contains
         // aiProcess_Debone which is buggy in 3.0.1270
         unsigned flags = aiProcess_Triangulate |
-            aiProcess_FlipUVs |
+            //aiProcess_FlipUVs |
             aiProcessPreset_TargetRealtime_Quality |
             aiProcess_FindInstances |
             aiProcess_ValidateDataStructure |
@@ -330,9 +352,9 @@ namespace assimp
     MeshRef Scene::convertAiMesh(const aiMesh *mesh)
     {
         // the current AssimpMesh we will be populating data into.
-        MeshRef assimpMeshRef(new Mesh());
+        MeshRef meshRef(new Mesh());
 
-        assimpMeshRef->mName = fromAssimp(mesh->mName);
+        meshRef->mName = fromAssimp(mesh->mName);
 
         // Handle material info
         aiMaterial *mtl = mScene->mMaterials[mesh->mMaterialIndex];
@@ -345,42 +367,41 @@ namespace assimp
         int twoSided;
         if ((AI_SUCCESS == mtl->Get(AI_MATKEY_TWOSIDED, twoSided)) && twoSided)
         {
-            assimpMeshRef->mTwoSided = true;
-            assimpMeshRef->mMaterial.Face = GL_FRONT_AND_BACK;
+            meshRef->mTwoSided = true;
+            meshRef->mMaterial.Face = GL_FRONT_AND_BACK;
             app::console() << " two sided" << endl;
         }
         else
         {
-            assimpMeshRef->mTwoSided = false;
-            assimpMeshRef->mMaterial.Face = GL_FRONT;
+            meshRef->mTwoSided = false;
+            meshRef->mMaterial.Face = GL_FRONT;
         }
 
         aiColor4D dcolor, scolor, acolor, ecolor;
         if (AI_SUCCESS == mtl->Get(AI_MATKEY_COLOR_DIFFUSE, dcolor))
         {
-            assimpMeshRef->mMaterial.Diffuse = fromAssimp(dcolor);
+            meshRef->mMaterial.Diffuse = fromAssimp(dcolor);
             app::console() << " diffuse: " << fromAssimp(dcolor) << endl;
         }
 
         if (AI_SUCCESS == mtl->Get(AI_MATKEY_COLOR_SPECULAR, scolor))
         {
-            assimpMeshRef->mMaterial.Specular = fromAssimp(scolor);
+            meshRef->mMaterial.Specular = fromAssimp(scolor);
             app::console() << " specular: " << fromAssimp(scolor) << endl;
         }
 
         if (AI_SUCCESS == mtl->Get(AI_MATKEY_COLOR_AMBIENT, acolor))
         {
-            assimpMeshRef->mMaterial.Ambient = fromAssimp(acolor);
+            meshRef->mMaterial.Ambient = fromAssimp(acolor);
             app::console() << " ambient: " << fromAssimp(acolor) << endl;
         }
 
         if (AI_SUCCESS == mtl->Get(AI_MATKEY_COLOR_EMISSIVE, ecolor))
         {
-            assimpMeshRef->mMaterial.Emission = fromAssimp(ecolor);
+            meshRef->mMaterial.Emission = fromAssimp(ecolor);
             app::console() << " emission: " << fromAssimp(ecolor) << endl;
         }
 
-        /*
         // FIXME: not sensible data, obj .mtl Ns 96.078431 -> 384.314
         float shininessStrength = 1;
         if ( AI_SUCCESS == mtl->Get( AI_MATKEY_SHININESS_STRENGTH, shininessStrength ) )
@@ -390,128 +411,109 @@ namespace assimp
         float shininess;
         if ( AI_SUCCESS == mtl->Get( AI_MATKEY_SHININESS, shininess ) )
         {
-            assimpMeshRef->mMaterial.Shininess = shininess * shininessStrength;
+            meshRef->mMaterial.Shininess = shininess * shininessStrength;
             app::console() << "shininess: " << shininess * shininessStrength << "[" <<
                 shininess << "]" << endl;
         }
-        */
 
-        // TODO: handle blending
-#if 0
         int blendMode;
         if (AI_SUCCESS == aiGetMaterialInteger(mtl, AI_MATKEY_BLEND_FUNC, &blendMode)) {
-            if (blendMode == aiBlendMode_Default) {
-                meshHelper.blendMode = OF_BLENDMODE_ALPHA;
-            }
-            else {
-                meshHelper.blendMode = OF_BLENDMODE_ADD;
-            }
+            if (blendMode == aiBlendMode_Default) meshRef->blendMode = BlendDefault;
+            else if (blendMode == aiBlendMode_Additive) meshRef->blendMode = BlendAdditive;
         }
-#endif
 
         // Load Textures
         int texIndex = 0;
         aiString texPath;
 
-        // TODO: handle other aiTextureTypes
-        if (AI_SUCCESS == mtl->GetTexture(aiTextureType_DIFFUSE, texIndex, &texPath))
+        for (int type = 0; type < kTextureTypeCount; type++)
         {
-            app::console() << " diffuse texture " << texPath.data;
-            fs::path texFsPath(texPath.data);
-            fs::path modelFolder = mFilePath.parent_path();
-            fs::path relTexPath = texFsPath.parent_path();
-            fs::path texFile = texFsPath.filename();
-            fs::path realPath = modelFolder / relTexPath / texFile;
-            app::console() << " [" << realPath.string() << "]" << endl;
-
-            // texture wrap
-            gl::Texture::Format format;
-            int uwrap;
-            if (AI_SUCCESS == mtl->Get(AI_MATKEY_MAPPINGMODE_U_DIFFUSE(0), uwrap))
+            if (AI_SUCCESS == mtl->GetTexture((aiTextureType)type, texIndex, &texPath))
             {
-                switch (uwrap)
+                app::console() << " texture " << texPath.data;
+                fs::path texFsPath(texPath.data);
+                fs::path modelFolder = mFilePath.parent_path();
+                fs::path relTexPath = texFsPath.parent_path();
+                fs::path texFile = texFsPath.filename();
+                fs::path realPath = modelFolder / relTexPath / texFile;
+                app::console() << " [" << realPath.string() << "]" << endl;
+
+                gl::Texture::Format format;
+                int uwrap;
+                if (AI_SUCCESS == mtl->Get(AI_MATKEY_MAPPINGMODE_U_DIFFUSE(0), uwrap))
                 {
-                case aiTextureMapMode_Wrap:
-                    format.setWrapS(GL_REPEAT);
-                    break;
+                    switch (uwrap)
+                    {
+                    case aiTextureMapMode_Wrap:
+                        format.setWrapS(GL_REPEAT);
+                        break;
 
-                case aiTextureMapMode_Clamp:
-                    format.setWrapS(GL_CLAMP_TO_EDGE);
-                    break;
+                    case aiTextureMapMode_Clamp:
+                        format.setWrapS(GL_CLAMP_TO_EDGE);
+                        break;
 
-                case aiTextureMapMode_Decal:
-                    // If the texture coordinates for a pixel are outside [0...1]
-                    // the texture is not applied to that pixel.
-                    format.setWrapS(GL_CLAMP_TO_EDGE);
-                    break;
+                    case aiTextureMapMode_Decal:
+                        // If the texture coordinates for a pixel are outside [0...1]
+                        // the texture is not applied to that pixel.
+                        format.setWrapS(GL_CLAMP_TO_EDGE);
+                        break;
 
-                case aiTextureMapMode_Mirror:
-                    // A texture coordinate u|v becomes u%1|v%1 if (u-(u%1))%2
-                    // is zero and 1-(u%1)|1-(v%1) otherwise.
-                    // TODO
-                    format.setWrapS(GL_REPEAT);
-                    break;
+                    case aiTextureMapMode_Mirror:
+                        // A texture coordinate u|v becomes u%1|v%1 if (u-(u%1))%2
+                        // is zero and 1-(u%1)|1-(v%1) otherwise.
+                        // TODO
+                        format.setWrapS(GL_REPEAT);
+                        break;
+                    }
                 }
-            }
-            int vwrap;
-            if (AI_SUCCESS == mtl->Get(AI_MATKEY_MAPPINGMODE_V_DIFFUSE(0), vwrap))
-            {
-                switch (vwrap)
+                int vwrap;
+                if (AI_SUCCESS == mtl->Get(AI_MATKEY_MAPPINGMODE_V_DIFFUSE(0), vwrap))
                 {
-                case aiTextureMapMode_Wrap:
-                    format.setWrapT(GL_REPEAT);
-                    break;
+                    switch (vwrap)
+                    {
+                    case aiTextureMapMode_Wrap:
+                        format.setWrapT(GL_REPEAT);
+                        break;
 
-                case aiTextureMapMode_Clamp:
-                    format.setWrapT(GL_CLAMP_TO_EDGE);
-                    break;
+                    case aiTextureMapMode_Clamp:
+                        format.setWrapT(GL_CLAMP_TO_EDGE);
+                        break;
 
-                case aiTextureMapMode_Decal:
-                    // If the texture coordinates for a pixel are outside [0...1]
-                    // the texture is not applied to that pixel.
-                    format.setWrapT(GL_CLAMP_TO_EDGE);
-                    break;
+                    case aiTextureMapMode_Decal:
+                        format.setWrapT(GL_CLAMP_TO_EDGE);
+                        break;
 
-                case aiTextureMapMode_Mirror:
-                    // A texture coordinate u|v becomes u%1|v%1 if (u-(u%1))%2
-                    // is zero and 1-(u%1)|1-(v%1) otherwise.
-                    // TODO
-                    format.setWrapT(GL_REPEAT);
-                    break;
+                    case aiTextureMapMode_Mirror:
+                        format.setWrapT(GL_REPEAT);
+                        break;
+                    }
                 }
-            }
 
-            try
-            {
-                assimpMeshRef->mTexture = gl::Texture::create(loadImage(realPath), format);
-            }
-            catch (ImageIoExceptionFailedLoad&)
-            {
-                app::console() << "Failed to load image from " << realPath << endl;
+                meshRef->mTextures[type] = am::texture2d(realPath.string(), format);
             }
         }
 
-        assimpMeshRef->mAiMesh = mesh;
-        fromAssimp(mesh, assimpMeshRef->mCachedTriMesh);
-        assimpMeshRef->mValidCache = true;
-        assimpMeshRef->mAnimatedPos.resize(mesh->mNumVertices);
+        meshRef->mAiMesh = mesh;
+        fromAssimp(mesh, meshRef->mCachedTriMesh);
+        meshRef->mValidCache = true;
+        meshRef->mAnimatedPos.resize(mesh->mNumVertices);
         if (mesh->HasNormals())
         {
-            assimpMeshRef->mAnimatedNorm.resize(mesh->mNumVertices);
+            meshRef->mAnimatedNorm.resize(mesh->mNumVertices);
         }
 
 
-        assimpMeshRef->mIndices.resize(mesh->mNumFaces * 3);
+        meshRef->mIndices.resize(mesh->mNumFaces * 3);
         unsigned j = 0;
         for (unsigned x = 0; x < mesh->mNumFaces; ++x)
         {
             for (unsigned a = 0; a < mesh->mFaces[x].mNumIndices; ++a)
             {
-                assimpMeshRef->mIndices[j++] = mesh->mFaces[x].mIndices[a];
+                meshRef->mIndices[j++] = mesh->mFaces[x].mIndices[a];
             }
         }
 
-        return assimpMeshRef;
+        return meshRef;
     }
 
     void Scene::loadAllMeshes()
@@ -525,8 +527,8 @@ namespace assimp
             if (name != "")
                 app::console() << " [" << name << "]";
             app::console() << endl;
-            MeshRef assimpMeshRef = convertAiMesh(mScene->mMeshes[i]);
-            mMeshes.push_back(assimpMeshRef);
+            MeshRef meshRef = convertAiMesh(mScene->mMeshes[i]);
+            mMeshes.push_back(meshRef);
         }
 
 #if 0
@@ -657,7 +659,7 @@ namespace assimp
             return 0;
     }
 
-    TriMesh& Scene::getAssimpNodeMesh(const string &name, size_t n /* = 0 */)
+    TriMeshRef Scene::getAssimpNodeMesh(const string &name, size_t n /* = 0 */)
     {
         MeshNodeRef node = getAssimpNode(name);
         if (node && n < node->mMeshes.size())
@@ -670,7 +672,7 @@ namespace assimp
     {
         MeshNodeRef node = getAssimpNode(name);
         if (node && n < node->mMeshes.size())
-            return node->mMeshes[n]->mTexture;
+            return node->mMeshes[n]->mTextures[aiTextureType_DIFFUSE];
         else
             throw ci::Exception("node " + name + " not found.");
     }
@@ -734,10 +736,10 @@ namespace assimp
             auto meshIt = nodeRef->mMeshes.cbegin();
             for (; meshIt != nodeRef->mMeshes.end(); ++meshIt)
             {
-                MeshRef assimpMeshRef = *meshIt;
+                MeshRef meshRef = *meshIt;
 
                 // current mesh we are introspecting
-                const aiMesh *mesh = assimpMeshRef->mAiMesh;
+                const aiMesh *mesh = meshRef->mAiMesh;
 
                 // calculate bone matrices
                 std::vector< aiMatrix4x4 > boneMatrices(mesh->mNumBones);
@@ -756,13 +758,13 @@ namespace assimp
                         bone->mOffsetMatrix;
                 }
 
-                assimpMeshRef->mValidCache = false;
+                meshRef->mValidCache = false;
 
-                assimpMeshRef->mAnimatedPos.assign(assimpMeshRef->mAnimatedPos.size(),
+                meshRef->mAnimatedPos.assign(meshRef->mAnimatedPos.size(),
                     aiVector3D(0, 0, 0));
                 if (mesh->HasNormals())
                 {
-                    assimpMeshRef->mAnimatedNorm.assign(assimpMeshRef->mAnimatedNorm.size(),
+                    meshRef->mAnimatedNorm.assign(meshRef->mAnimatedNorm.size(),
                         aiVector3D(0, 0, 0));
                 }
 
@@ -778,7 +780,7 @@ namespace assimp
                         size_t vertexId = weight.mVertexId;
                         const aiVector3D& srcPos = mesh->mVertices[vertexId];
 
-                        assimpMeshRef->mAnimatedPos[vertexId] += weight.mWeight * (posTrafo * srcPos);
+                        meshRef->mAnimatedPos[vertexId] += weight.mWeight * (posTrafo * srcPos);
                     }
 
                     if (mesh->HasNormals())
@@ -792,7 +794,7 @@ namespace assimp
                             size_t vertexId = weight.mVertexId;
 
                             const aiVector3D& srcNorm = mesh->mNormals[vertexId];
-                            assimpMeshRef->mAnimatedNorm[vertexId] += weight.mWeight * (normTrafo * srcNorm);
+                            meshRef->mAnimatedNorm[vertexId] += weight.mWeight * (normTrafo * srcNorm);
                         }
                     }
                 }
@@ -810,39 +812,39 @@ namespace assimp
             auto meshIt = nodeRef->mMeshes.begin();
             for (; meshIt != nodeRef->mMeshes.end(); ++meshIt)
             {
-                MeshRef assimpMeshRef = *meshIt;
+                MeshRef meshRef = *meshIt;
 
-                if (assimpMeshRef->mValidCache)
+                if (meshRef->mValidCache)
                     continue;
 
-                auto numVertices = assimpMeshRef->mCachedTriMesh.getNumVertices();
+                auto numVertices = meshRef->mCachedTriMesh->getNumVertices();
 
                 if (mSkinningEnabled)
                 {
                     // animated data
-                    vec3* vertices = assimpMeshRef->mCachedTriMesh.getPositions<3>();
+                    vec3* vertices = meshRef->mCachedTriMesh->getPositions<3>();
                     for (size_t v = 0; v < numVertices; ++v)
-                        vertices[v] = fromAssimp(assimpMeshRef->mAnimatedPos[v]);
+                        vertices[v] = fromAssimp(meshRef->mAnimatedPos[v]);
 
-                    std::vector< vec3 > &normals = assimpMeshRef->mCachedTriMesh.getNormals();
+                    std::vector< vec3 > &normals = meshRef->mCachedTriMesh->getNormals();
                     for (size_t v = 0; v < normals.size(); ++v)
-                        normals[v] = fromAssimp(assimpMeshRef->mAnimatedNorm[v]);
+                        normals[v] = fromAssimp(meshRef->mAnimatedNorm[v]);
                 }
                 else
                 {
                     // original mesh data from assimp
-                    const aiMesh *mesh = assimpMeshRef->mAiMesh;
+                    const aiMesh *mesh = meshRef->mAiMesh;
 
-                    vec3* vertices = assimpMeshRef->mCachedTriMesh.getPositions<3>();
+                    vec3* vertices = meshRef->mCachedTriMesh->getPositions<3>();
                     for (size_t v = 0; v < numVertices; ++v)
                         vertices[v] = fromAssimp(mesh->mVertices[v]);
 
-                    std::vector< vec3 > &normals = assimpMeshRef->mCachedTriMesh.getNormals();
+                    std::vector< vec3 > &normals = meshRef->mCachedTriMesh->getNormals();
                     for (size_t v = 0; v < normals.size(); ++v)
                         normals[v] = fromAssimp(mesh->mNormals[v]);
                 }
 
-                assimpMeshRef->mValidCache = true;
+                meshRef->mValidCache = true;
             }
         }
     }
@@ -862,8 +864,8 @@ namespace assimp
             auto meshIt = nodeRef->mMeshes.cbegin();
             for (; meshIt != nodeRef->mMeshes.end(); ++meshIt)
             {
-                MeshRef assimpMeshRef = *meshIt;
-                assimpMeshRef->mValidCache = false;
+                MeshRef meshRef = *meshIt;
+                meshRef->mValidCache = false;
             }
         }
     }
@@ -881,56 +883,38 @@ namespace assimp
 
     void Scene::draw()
     {
-        auto it = mNodes.cbegin();
-        for (; it != mNodes.end(); ++it)
+        for (const auto& nodeRef : mNodes)
         {
-            MeshNodeRef nodeRef = *it;
-
-            auto meshIt = nodeRef->mMeshes.cbegin();
-            for (; meshIt != nodeRef->mMeshes.end(); ++meshIt)
+            for (const auto& meshRef : nodeRef->mMeshes)
             {
-                MeshRef assimpMeshRef = *meshIt;
-
-                // Texture Binding
-                if (mTexturesEnabled && assimpMeshRef->mTexture)
+                if (meshRef->mTextures[aiTextureType_DIFFUSE])
                 {
-                    //assimpMeshRef->mTexture.enableAndBind();
+                    meshRef->mTextures[aiTextureType_DIFFUSE]->bind();
                 }
 
-                if (mMaterialsEnabled)
-                {
-                    //assimpMeshRef->mMaterial.apply();
-                }
-                else
-                {
-                    //gl::color( assimpMeshRef->mMaterial.getDiffuse());
-                }
+                if (meshRef->blendMode == BlendDefault)
+                    gl::enableAlphaBlending();
+                else if (meshRef->blendMode == BlendAdditive)
+                    gl::enableAdditiveBlending();
 
-                // Culling
-                if (assimpMeshRef->mTwoSided)
+                if (meshRef->mTwoSided)
                     gl::enable(GL_CULL_FACE);
                 else
                     gl::disable(GL_CULL_FACE);
 
-                gl::draw(assimpMeshRef->mCachedTriMesh);
-
-                // Texture Binding
-                if (mTexturesEnabled && assimpMeshRef->mTexture)
-                {
-                    //assimpMeshRef->mTexture.unbind();
-                }
+                gl::draw(*meshRef->mCachedTriMesh);
             }
         }
     }
 
-    TriMesh & Scene::getMesh(size_t n)
+    TriMeshRef Scene::getMesh(size_t n)
     {
         return mMeshes[n]->mCachedTriMesh;
     }
 
     gl::TextureRef Scene::getTexture(size_t n)
     {
-        return mMeshes[n]->mTexture;
+        return mMeshes[n]->mTextures[aiTextureType_DIFFUSE];
     }
 
 } // namespace assimp
