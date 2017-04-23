@@ -649,59 +649,6 @@ namespace assimp
         else
             return MeshNodeRef();
     }
-
-    size_t Scene::getAssimpNodeNumMeshes(const string &name)
-    {
-        MeshNodeRef node = getAssimpNode(name);
-        if (node)
-            return node->mMeshes.size();
-        else
-            return 0;
-    }
-
-    TriMeshRef Scene::getAssimpNodeMesh(const string &name, size_t n /* = 0 */)
-    {
-        MeshNodeRef node = getAssimpNode(name);
-        if (node && n < node->mMeshes.size())
-            return node->mMeshes[n]->mCachedTriMesh;
-        else
-            throw ci::Exception("node " + name + " not found.");
-    }
-
-    gl::TextureRef Scene::getAssimpNodeTexture(const string &name, size_t n /* = 0 */)
-    {
-        MeshNodeRef node = getAssimpNode(name);
-        if (node && n < node->mMeshes.size())
-            return node->mMeshes[n]->mTextures[aiTextureType_DIFFUSE];
-        else
-            throw ci::Exception("node " + name + " not found.");
-    }
-
-    Material& Scene::getAssimpNodeMaterial(const string &name, size_t n /* = 0 */)
-    {
-        MeshNodeRef node = getAssimpNode(name);
-        if (node && n < node->mMeshes.size())
-            return node->mMeshes[n]->mMaterial;
-        else
-            throw ci::Exception("node " + name + " not found.");
-    }
-
-    void Scene::setNodeOrientation(const string &name, const quat &rot)
-    {
-        MeshNodeRef node = getAssimpNode(name);
-        if (node)
-            node->setRotation(rot);
-    }
-
-    quat Scene::getNodeOrientation(const string &name)
-    {
-        MeshNodeRef node = getAssimpNode(name);
-        if (node)
-            return node->getRotation();
-        else
-            return quat();
-    }
-
     size_t Scene::getNumAnimations() const
     {
         return mScene->mNumAnimations;
@@ -728,16 +675,10 @@ namespace assimp
 
     void Scene::updateSkinning()
     {
-        auto it = mNodes.cbegin();
-        for (; it != mNodes.end(); ++it)
+        for (const auto& nodeRef : mNodes)
         {
-            MeshNodeRef nodeRef = *it;
-
-            auto meshIt = nodeRef->mMeshes.cbegin();
-            for (; meshIt != nodeRef->mMeshes.end(); ++meshIt)
+            for (const auto& meshRef : nodeRef->mMeshes)
             {
-                MeshRef meshRef = *meshIt;
-
                 // current mesh we are introspecting
                 const aiMesh *mesh = meshRef->mAiMesh;
 
@@ -804,16 +745,10 @@ namespace assimp
 
     void Scene::updateMeshes()
     {
-        auto it = mNodes.begin();
-        for (; it != mNodes.end(); ++it)
+        for (const auto& nodeRef : mNodes)
         {
-            MeshNodeRef nodeRef = *it;
-
-            auto meshIt = nodeRef->mMeshes.begin();
-            for (; meshIt != nodeRef->mMeshes.end(); ++meshIt)
+            for (const auto& meshRef : nodeRef->mMeshes)
             {
-                MeshRef meshRef = *meshIt;
-
                 if (meshRef->mValidCache)
                     continue;
 
@@ -856,15 +791,10 @@ namespace assimp
 
         mSkinningEnabled = enable;
         // invalidate mesh cache
-        auto it = mNodes.cbegin();
-        for (; it != mNodes.end(); ++it)
+        for (const auto& nodeRef : mNodes)
         {
-            MeshNodeRef nodeRef = *it;
-
-            auto meshIt = nodeRef->mMeshes.cbegin();
-            for (; meshIt != nodeRef->mMeshes.end(); ++meshIt)
+            for (const auto& meshRef : nodeRef->mMeshes)
             {
-                MeshRef meshRef = *meshIt;
                 meshRef->mValidCache = false;
             }
         }
@@ -905,16 +835,6 @@ namespace assimp
                 gl::draw(*meshRef->mCachedTriMesh);
             }
         }
-    }
-
-    TriMeshRef Scene::getMesh(size_t n)
-    {
-        return mMeshes[n]->mCachedTriMesh;
-    }
-
-    gl::TextureRef Scene::getTexture(size_t n)
-    {
-        return mMeshes[n]->mTextures[aiTextureType_DIFFUSE];
     }
 
 } // namespace assimp
