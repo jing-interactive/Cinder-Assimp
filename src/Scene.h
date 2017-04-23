@@ -51,11 +51,11 @@ namespace assimp
 
     struct Material
     {
-        Color			Ambient;
-        Color			Diffuse;
-        Color			Specular;
+        ColorA			Ambient;
+        ColorA			Diffuse;
+        ColorA			Specular;
         float			Shininess;
-        Color			Emission;
+        ColorA			Emission;
         GLenum			Face;
     };
 
@@ -85,24 +85,8 @@ namespace assimp
         //! Returns the bounding box of the static, not skinned mesh.
         AxisAlignedBox getBoundingBox() const { return mBoundingBox; }
 
-        //! Sets the orientation of this node via a quaternion.
-        void setNodeOrientation(const std::string &name, const quat &rot);
-        //! Returns a quaternion representing the orientation of the node called \a name.
-        quat getNodeOrientation(const std::string &name);
-
         //! Returns the node called \a name.
         MeshNodeRef getAssimpNode(const std::string &name);
-
-        //! Returns the total number of meshes contained by the node called \a name.
-        size_t getAssimpNodeNumMeshes(const std::string &name);
-        //! Returns the \a n'th cinder::TriMesh contained by the node called \a name.
-        TriMeshRef getAssimpNodeMesh(const std::string &name, size_t n = 0);
-
-        //! Returns the texture of the \a n'th mesh in the node called \a name.
-        gl::TextureRef getAssimpNodeTexture(const std::string &name, size_t n = 0);
-
-        //! Returns the material of the \a n'th mesh in the node called \a name.
-        Material& getAssimpNodeMaterial(const std::string &name, size_t n = 0);
 
         //! Returns all node names in the model in a std::vector as std::string's.
         const std::vector< std::string > &getNodeNames() { return mNodeNames; }
