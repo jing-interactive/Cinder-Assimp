@@ -189,7 +189,7 @@ namespace assimp
             }
         }
 
-        // aiVector3D *	mTextureCoords [AI_MAX_NUMBER_OF_TEXTURECOORDS]
+        // aiVector3D * mTextureCoords [AI_MAX_NUMBER_OF_TEXTURECOORDS]
         // just one for now
         if (aim->GetNumUVChannels() > 0)
         {
@@ -250,7 +250,8 @@ namespace assimp
         calculateDimensions();
 
         loadAllMeshes();
-        mRootNode = loadNodes(mScene->mRootNode);
+		auto rootNode = loadNodes(mScene->mRootNode);
+		addChild(rootNode);
     }
 
     void Scene::calculateDimensions()
@@ -327,10 +328,10 @@ namespace assimp
         for (unsigned i = 0; i < nd->mNumMeshes; ++i)
         {
             unsigned meshId = nd->mMeshes[i];
-            if (meshId >= mMeshes.size())
-                throw ci::Exception("node " + nodeRef->getName() + " references mesh #" +
-                    toString< unsigned >(meshId) + " from " +
-                    toString< size_t >(mMeshes.size()) + " meshes.");
+            //if (meshId >= mMeshes.size())
+            //    throw ci::Exception("node " + nodeRef->getName() + " references mesh #" +
+            //        toString< unsigned >(meshId) + " from " +
+            //        toString< size_t >(mMeshes.size()) + " meshes.");
             nodeRef->mMeshes.push_back(mMeshes[meshId]);
         }
 
@@ -811,29 +812,26 @@ namespace assimp
         updateMeshes();
     }
 
-    void Scene::draw()
+    void MeshNode::draw()
     {
-        for (const auto& nodeRef : mNodes)
+        for (const auto& meshRef : mMeshes)
         {
-            for (const auto& meshRef : nodeRef->mMeshes)
+            if (meshRef->mTextures[aiTextureType_DIFFUSE])
             {
-                if (meshRef->mTextures[aiTextureType_DIFFUSE])
-                {
-                    meshRef->mTextures[aiTextureType_DIFFUSE]->bind();
-                }
-
-                if (meshRef->blendMode == BlendDefault)
-                    gl::enableAlphaBlending();
-                else if (meshRef->blendMode == BlendAdditive)
-                    gl::enableAdditiveBlending();
-
-                if (meshRef->mTwoSided)
-                    gl::enable(GL_CULL_FACE);
-                else
-                    gl::disable(GL_CULL_FACE);
-
-                gl::draw(*meshRef->mCachedTriMesh);
+                meshRef->mTextures[aiTextureType_DIFFUSE]->bind();
             }
+
+            if (meshRef->blendMode == BlendDefault)
+                gl::enableAlphaBlending();
+            else if (meshRef->blendMode == BlendAdditive)
+                gl::enableAdditiveBlending();
+
+            if (meshRef->mTwoSided)
+                gl::enable(GL_CULL_FACE);
+            else
+                gl::disable(GL_CULL_FACE);
+
+            gl::draw(*meshRef->mCachedTriMesh);
         }
     }
 

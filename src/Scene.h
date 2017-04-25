@@ -51,12 +51,12 @@ namespace assimp
 
     struct Material
     {
-        ColorA			Ambient;
-        ColorA			Diffuse;
-        ColorA			Specular;
-        float			Shininess;
-        ColorA			Emission;
-        GLenum			Face;
+        ColorA          Ambient;
+        ColorA          Diffuse;
+        ColorA          Specular;
+        float           Shininess;
+        ColorA          Emission;
+        GLenum          Face;
     };
 
     class Mesh;
@@ -64,12 +64,13 @@ namespace assimp
 
     struct MeshNode : public nodes::Node3D
     {
-        std::vector< std::shared_ptr< class Mesh > > mMeshes;
+        std::vector< MeshRef > mMeshes;
+        virtual void draw();
     };
 
     typedef std::shared_ptr< MeshNode > MeshNodeRef;
 
-    class Scene
+    class Scene : public MeshNode
     {
     public:
         Scene() {}
@@ -79,8 +80,6 @@ namespace assimp
 
         //! Updates model animation and skinning.
         void update();
-        //! Draws all meshes in the model.
-        void draw();
 
         //! Returns the bounding box of the static, not skinned mesh.
         AxisAlignedBox getBoundingBox() const { return mBoundingBox; }
@@ -130,10 +129,7 @@ namespace assimp
 
         AxisAlignedBox mBoundingBox;
 
-        MeshNodeRef mRootNode; /// root node of scene
-
         std::vector< MeshNodeRef > mNodes; /// nodes with meshes
-        std::vector< MeshRef > mMeshes; /// all meshes
 
         std::vector< std::string > mNodeNames;
         std::map< std::string, MeshNodeRef > mNodeMap;
