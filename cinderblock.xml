@@ -2,13 +2,12 @@
 <cinder>
     <block
 	name="Cinder-Assimp"
-	id="org.libcinder.skinning"
-	author="Vinjn Zhang"
+	id="jing.assimp"
+	author="Jing Interactive"
 	license="BSD"
 	summary="Development block for Cinder asset loading, skeletal animations and mesh skinning"
 	git="git://github.com/jing-interactive/Cinder-Assimp.git"
 	version="0.1"
-	libraryUrl="www.libcinder.org"
     >
 
     <headerPattern>include/*.h</headerPattern>
