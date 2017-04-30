@@ -33,7 +33,7 @@
     <ClInclude Include="..\src\AssimpScene.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{BF626EF6-D4AA-43DA-BCD8-BBD40E22FAAE}</ProjectGuid>
+    <ProjectGuid>{D43490B1-40F5-0BE8-0930-556575AF50C4}</ProjectGuid>
     <Keyword>StaticLibrary</Keyword>
     <RootNamespace>assimp</RootNamespace>
     <DefaultLanguage>en-US</DefaultLanguage>
@@ -106,8 +106,8 @@
   <PropertyGroup />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <GenerateManifest>false</GenerateManifest>
-    <OutDir>$(SolutionDir)..\lib\msw_uwp\x86\</OutDir>
-    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <OutDir>..\lib\msw_uwp\x86\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\cinder-assimp\</IntDir>
     <TargetName>$(ProjectName)-d</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -117,8 +117,9 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
     <GenerateManifest>false</GenerateManifest>
-    <OutDir>$(SolutionDir)..\lib\msw_uwp\ARM\</OutDir>
+    <OutDir>..\lib\msw_uwp\ARM\</OutDir>
     <TargetName>$(ProjectName)-d</TargetName>
+    <IntDir>$(Platform)\$(Configuration)\cinder-assimp\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
     <GenerateManifest>false</GenerateManifest>
@@ -126,8 +127,9 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <GenerateManifest>false</GenerateManifest>
-    <OutDir>$(SolutionDir)..\lib\msw_uwp\x64\</OutDir>
+    <OutDir>..\lib\msw_uwp\x64\</OutDir>
     <TargetName>$(ProjectName)-d</TargetName>
+    <IntDir>$(Platform)\$(Configuration)\cinder-assimp\</IntDir>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <GenerateManifest>false</GenerateManifest>
