@@ -40,7 +40,7 @@
 #include "cinder/gl/Texture.h"
 #include "cinder/gl/scoped.h"
 
-#include "Scene.h"
+#include "AssimpScene.h"
 
 using namespace std;
 

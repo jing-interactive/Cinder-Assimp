@@ -30,6 +30,6 @@ docs/html
 docs/doxygen/cinder.tag
 
 # solution files
-vs*/
+# vs*/
 xcode*/
 assimp/contrib/gtest/

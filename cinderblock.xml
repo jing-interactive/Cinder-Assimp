@@ -47,5 +47,16 @@
             <staticLibrary>lib/msw/$(PlatformTarget)/cinder-assimp.lib</staticLibrary>
         </platform>
     </platform>
+    <platform os="msw_uwp">
+        <platform config="debug">
+            <staticLibrary>lib/msw_uwp/$(PlatformTarget)/assimp-d.lib</staticLibrary>
+            <staticLibrary>lib/msw_uwp/$(PlatformTarget)/cinder-assimp-d.lib</staticLibrary>
+        </platform>
+
+        <platform config="release">
+            <staticLibrary>lib/msw_uwp/$(PlatformTarget)/assimp.lib</staticLibrary>
+            <staticLibrary>lib/msw_uwp/$(PlatformTarget)/cinder-assimp.lib</staticLibrary>
+        </platform>
+    </platform>    
 </block>
 </cinder>

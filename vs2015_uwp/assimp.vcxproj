@@ -1,0 +1,316 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="14.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|ARM">
+      <Configuration>Debug</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Debug|x64">
+      <Configuration>Debug</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|ARM">
+      <Configuration>Release</Configuration>
+      <Platform>ARM</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|x64">
+      <Configuration>Release</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\assimp\code\Assimp.cpp" />
+    <ClCompile Include="..\assimp\code\BaseImporter.cpp" />
+    <ClCompile Include="..\assimp\code\BaseProcess.cpp" />
+    <ClCompile Include="..\assimp\code\ColladaLoader.cpp" />
+    <ClCompile Include="..\assimp\code\ColladaParser.cpp" />
+    <ClCompile Include="..\assimp\code\ConvertToLHProcess.cpp" />
+    <ClCompile Include="..\assimp\code\CreateAnimMesh.cpp" />
+    <ClCompile Include="..\assimp\code\DefaultIOStream.cpp" />
+    <ClCompile Include="..\assimp\code\DefaultIOSystem.cpp" />
+    <ClCompile Include="..\assimp\code\DefaultLogger.cpp" />
+    <ClCompile Include="..\assimp\code\FBXAnimation.cpp" />
+    <ClCompile Include="..\assimp\code\FBXBinaryTokenizer.cpp" />
+    <ClCompile Include="..\assimp\code\FBXConverter.cpp" />
+    <ClCompile Include="..\assimp\code\FBXDeformer.cpp" />
+    <ClCompile Include="..\assimp\code\FBXDocument.cpp" />
+    <ClCompile Include="..\assimp\code\FBXDocumentUtil.cpp" />
+    <ClCompile Include="..\assimp\code\FBXImporter.cpp" />
+    <ClCompile Include="..\assimp\code\FBXMaterial.cpp" />
+    <ClCompile Include="..\assimp\code\FBXMeshGeometry.cpp" />
+    <ClCompile Include="..\assimp\code\FBXModel.cpp" />
+    <ClCompile Include="..\assimp\code\FBXNodeAttribute.cpp" />
+    <ClCompile Include="..\assimp\code\FBXParser.cpp" />
+    <ClCompile Include="..\assimp\code\FBXProperties.cpp" />
+    <ClCompile Include="..\assimp\code\FBXTokenizer.cpp" />
+    <ClCompile Include="..\assimp\code\FBXUtil.cpp" />
+    <ClCompile Include="..\assimp\code\GenVertexNormalsProcess.cpp" />
+    <ClCompile Include="..\assimp\code\Importer.cpp" />
+    <ClCompile Include="..\assimp\code\ImporterRegistry.cpp" />
+    <ClCompile Include="..\assimp\code\MakeVerboseFormat.cpp" />
+    <ClCompile Include="..\assimp\code\MaterialSystem.cpp" />
+    <ClCompile Include="..\assimp\code\ObjFileImporter.cpp" />
+    <ClCompile Include="..\assimp\code\ObjFileMtlImporter.cpp" />
+    <ClCompile Include="..\assimp\code\ObjFileParser.cpp" />
+    <ClCompile Include="..\assimp\code\PlyLoader.cpp" />
+    <ClCompile Include="..\assimp\code\PlyParser.cpp" />
+    <ClCompile Include="..\assimp\code\PostStepRegistry.cpp" />
+    <ClCompile Include="..\assimp\code\ProcessHelper.cpp" />
+    <ClCompile Include="..\assimp\code\SGSpatialSort.cpp" />
+    <ClCompile Include="..\assimp\code\ScenePreprocessor.cpp" />
+    <ClCompile Include="..\assimp\code\SkeletonMeshBuilder.cpp" />
+    <ClCompile Include="..\assimp\code\SpatialSort.cpp" />
+    <ClCompile Include="..\assimp\code\TriangulateProcess.cpp" />
+    <ClCompile Include="..\assimp\code\ValidateDataStructure.cpp" />
+    <ClCompile Include="..\assimp\code\Version.cpp" />
+    <ClCompile Include="..\assimp\code\VertexTriangleAdjacency.cpp" />
+    <ClCompile Include="..\assimp\code\glTFImporter.cpp" />
+    <ClCompile Include="..\assimp\code\scene.cpp" />
+    <ClCompile Include="..\assimp\contrib\ConvertUTF\ConvertUTF.c" />
+    <ClCompile Include="..\assimp\contrib\irrXML\irrXML.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\assimp\contrib\irrXML\CXMLReaderImpl.h" />
+    <ClInclude Include="..\assimp\contrib\irrXML\heapsort.h" />
+    <ClInclude Include="..\assimp\contrib\irrXML\irrArray.h" />
+    <ClInclude Include="..\assimp\contrib\irrXML\irrString.h" />
+    <ClInclude Include="..\assimp\contrib\irrXML\irrTypes.h" />
+    <ClInclude Include="..\assimp\contrib\irrXML\irrXML.h" />
+    <ClInclude Include="..\assimp\include\assimp\Compiler\poppack1.h" />
+    <ClInclude Include="..\assimp\include\assimp\Compiler\pstdint.h" />
+    <ClInclude Include="..\assimp\include\assimp\Compiler\pushpack1.h" />
+    <ClInclude Include="..\assimp\include\assimp\DefaultIOStream.h" />
+    <ClInclude Include="..\assimp\include\assimp\DefaultIOSystem.h" />
+    <ClInclude Include="..\assimp\include\assimp\DefaultLogger.hpp" />
+    <ClInclude Include="..\assimp\include\assimp\Defines.h" />
+    <ClInclude Include="..\assimp\include\assimp\Exporter.hpp" />
+    <ClInclude Include="..\assimp\include\assimp\IOStream.hpp" />
+    <ClInclude Include="..\assimp\include\assimp\IOSystem.hpp" />
+    <ClInclude Include="..\assimp\include\assimp\Importer.hpp" />
+    <ClInclude Include="..\assimp\include\assimp\LogStream.hpp" />
+    <ClInclude Include="..\assimp\include\assimp\Logger.hpp" />
+    <ClInclude Include="..\assimp\include\assimp\NullLogger.hpp" />
+    <ClInclude Include="..\assimp\include\assimp\ProgressHandler.hpp" />
+    <ClInclude Include="..\assimp\include\assimp\ai_assert.h" />
+    <ClInclude Include="..\assimp\include\assimp\anim.h" />
+    <ClInclude Include="..\assimp\include\assimp\camera.h" />
+    <ClInclude Include="..\assimp\include\assimp\cexport.h" />
+    <ClInclude Include="..\assimp\include\assimp\cfileio.h" />
+    <ClInclude Include="..\assimp\include\assimp\cimport.h" />
+    <ClInclude Include="..\assimp\include\assimp\color4.h" />
+    <ClInclude Include="..\assimp\include\assimp\config.h" />
+    <ClInclude Include="..\assimp\include\assimp\defs.h" />
+    <ClInclude Include="..\assimp\include\assimp\importerdesc.h" />
+    <ClInclude Include="..\assimp\include\assimp\light.h" />
+    <ClInclude Include="..\assimp\include\assimp\material.h" />
+    <ClInclude Include="..\assimp\include\assimp\matrix3x3.h" />
+    <ClInclude Include="..\assimp\include\assimp\matrix4x4.h" />
+    <ClInclude Include="..\assimp\include\assimp\mesh.h" />
+    <ClInclude Include="..\assimp\include\assimp\metadata.h" />
+    <ClInclude Include="..\assimp\include\assimp\port\AndroidJNI\AndroidJNIIOSystem.h" />
+    <ClInclude Include="..\assimp\include\assimp\postprocess.h" />
+    <ClInclude Include="..\assimp\include\assimp\quaternion.h" />
+    <ClInclude Include="..\assimp\include\assimp\scene.h" />
+    <ClInclude Include="..\assimp\include\assimp\texture.h" />
+    <ClInclude Include="..\assimp\include\assimp\types.h" />
+    <ClInclude Include="..\assimp\include\assimp\vector2.h" />
+    <ClInclude Include="..\assimp\include\assimp\vector3.h" />
+    <ClInclude Include="..\assimp\include\assimp\version.h" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{3eaa09ac-3a5f-49bb-9820-32646ea1d6bc}</ProjectGuid>
+    <Keyword>StaticLibrary</Keyword>
+    <RootNamespace>assimp</RootNamespace>
+    <DefaultLanguage>en-US</DefaultLanguage>
+    <MinimumVisualStudioVersion>14.0</MinimumVisualStudioVersion>
+    <AppContainerApplication>true</AppContainerApplication>
+    <ApplicationType>Windows Store</ApplicationType>
+    <WindowsTargetPlatformVersion>10.0.14393.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformMinVersion>10.0.10586.0</WindowsTargetPlatformMinVersion>
+    <ApplicationTypeRevision>10.0</ApplicationTypeRevision>
+    <ProjectName>assimp</ProjectName>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>true</UseDebugLibraries>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <PlatformToolset>v140</PlatformToolset>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Label="Shared">
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <GenerateManifest>false</GenerateManifest>
+    <OutDir>$(SolutionDir)..\lib\msw_uwp\x86\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+    <TargetName>$(ProjectName)-d</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <GenerateManifest>false</GenerateManifest>
+    <OutDir>$(SolutionDir)..\lib\msw_uwp\x86\</OutDir>
+    <IntDir>$(Platform)\$(Configuration)\</IntDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|ARM'">
+    <GenerateManifest>false</GenerateManifest>
+    <OutDir>$(SolutionDir)..\lib\msw_uwp\ARM\</OutDir>
+    <TargetName>$(ProjectName)-d</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|ARM'">
+    <GenerateManifest>false</GenerateManifest>
+    <OutDir>$(SolutionDir)..\lib\msw_uwp\ARM\</OutDir>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <GenerateManifest>false</GenerateManifest>
+    <OutDir>$(SolutionDir)..\lib\msw_uwp\x64\</OutDir>
+    <TargetName>$(ProjectName)-d</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <GenerateManifest>false</GenerateManifest>
+    <OutDir>$(SolutionDir)..\lib\msw_uwp\x64\</OutDir>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <CompileAsWinRT>false</CompileAsWinRT>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>..\assimp\include;..\assimp\contrib\zlib;..\assimp\contrib\rapidjson\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
+      <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <CompileAsWinRT>false</CompileAsWinRT>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>..\assimp\include;..\assimp\contrib\zlib;..\assimp\contrib\rapidjson\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
+      <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|arm'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <CompileAsWinRT>false</CompileAsWinRT>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>..\assimp\include;..\assimp\contrib\zlib;..\assimp\contrib\rapidjson\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE=1;%(ClCompile.PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
+      <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|arm'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <CompileAsWinRT>false</CompileAsWinRT>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>..\assimp\include;..\assimp\contrib\zlib;..\assimp\contrib\rapidjson\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;_ARM_WINAPI_PARTITION_DESKTOP_SDK_AVAILABLE=1;%(ClCompile.PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
+      <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <CompileAsWinRT>false</CompileAsWinRT>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>..\assimp\include;..\assimp\contrib\zlib;..\assimp\contrib\rapidjson\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
+      <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <ClCompile>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <CompileAsWinRT>false</CompileAsWinRT>
+      <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>..\assimp\include;..\assimp\contrib\zlib;..\assimp\contrib\rapidjson\include;$(ProjectDir);$(GeneratedFilesDir);$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_SCL_SECURE_NO_WARNINGS;_CRT_SECURE_NO_WARNINGS;_UNICODE;UNICODE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <IgnoreAllDefaultLibraries>false</IgnoreAllDefaultLibraries>
+      <GenerateWindowsMetadata>false</GenerateWindowsMetadata>
+    </Link>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
