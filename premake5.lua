@@ -80,13 +80,19 @@ solution "cinder-assimp"
         kind "StaticLib"
 
         includedirs {
-			"include",
+            "include",
             "assimp/include",
             "../../include",
         }
-
+        
+        sysincludedirs {
+            "include",
+            "assimp/include",
+            "../../include",
+        }
+        
         files {
-			"include/*",
+            "include/*",
             "src/*",
         }
 
@@ -240,6 +246,13 @@ solution "cinder-assimp"
             "assimp/code/glTFImporter.cpp",
             "assimp/code/MakeVerboseFormat.cpp",
             "assimp/contrib/irrXML/*",
+        }
 
+    project "ConvertUTF"
+        kind "StaticLib"
+        language "C"
+
+        files {
             "assimp/contrib/ConvertUTF/ConvertUTF.c",
         }
+
