@@ -254,13 +254,24 @@ namespace assimp
             throw ci::Exception(importer.GetErrorString());
 
         scene->mFilePath = filename;
-        scene->calculateDimensions();
 
         scene->loadAllMeshes();
         scene->loadNodes(scene->mScene->mRootNode);
 
         return newItem;
     }
+    
+    AxisAlignedBox Scene::getBoundingBox()
+    {
+        static bool isDirty = true;
+        if (isDirty)
+        {
+            isDirty = false;
+            calculateDimensions();
+        }
+        return mBoundingBox;
+    }
+
 
     void Scene::calculateDimensions()
     {
@@ -440,7 +451,9 @@ namespace assimp
             if (AI_SUCCESS == mtl->GetTexture((aiTextureType)type, texIndex, &texPath))
             {
                 app::console() << " texture " << texPath.data;
-                fs::path texFsPath(texPath.data);
+                string temp(texPath.data);
+                replace(temp.begin(), temp.end(), '\\', '/');
+                fs::path texFsPath(temp);
                 fs::path modelFolder = mFilePath.parent_path();
                 fs::path relTexPath = texFsPath.parent_path();
                 fs::path texFile = texFsPath.filename();

@@ -82,7 +82,7 @@ namespace assimp
         void update();
 
         //! Returns the bounding box of the static, not skinned mesh.
-        AxisAlignedBox getBoundingBox() const { return mBoundingBox; }
+        AxisAlignedBox getBoundingBox();
 
         //! Returns the node called \a name.
         MeshNodeRef getAssimpNode(const std::string &name);
