@@ -461,6 +461,11 @@ namespace assimp
                 app::console() << " [" << realPath.string() << "]" << endl;
 
                 gl::Texture::Format format;
+                format.enableMipmapping();
+                format.setMinFilter(GL_LINEAR_MIPMAP_LINEAR);
+                format.setMagFilter(GL_LINEAR);
+                format.setWrap(GL_REPEAT, GL_REPEAT);
+                
                 int uwrap;
                 if (AI_SUCCESS == mtl->Get(AI_MATKEY_MAPPINGMODE_U_DIFFUSE(0), uwrap))
                 {
@@ -475,16 +480,11 @@ namespace assimp
                         break;
 
                     case aiTextureMapMode_Decal:
-                        // If the texture coordinates for a pixel are outside [0...1]
-                        // the texture is not applied to that pixel.
-                        format.setWrapS(GL_CLAMP_TO_EDGE);
+                        format.setWrapS(GL_CLAMP_TO_BORDER);
                         break;
 
                     case aiTextureMapMode_Mirror:
-                        // A texture coordinate u|v becomes u%1|v%1 if (u-(u%1))%2
-                        // is zero and 1-(u%1)|1-(v%1) otherwise.
-                        // TODO
-                        format.setWrapS(GL_REPEAT);
+                        format.setWrapS(GL_MIRRORED_REPEAT);
                         break;
                     }
                 }
@@ -502,11 +502,11 @@ namespace assimp
                         break;
 
                     case aiTextureMapMode_Decal:
-                        format.setWrapT(GL_CLAMP_TO_EDGE);
+                        format.setWrapT(GL_CLAMP_TO_BORDER);
                         break;
 
                     case aiTextureMapMode_Mirror:
-                        format.setWrapT(GL_REPEAT);
+                        format.setWrapT(GL_MIRRORED_REPEAT);
                         break;
                     }
                 }
