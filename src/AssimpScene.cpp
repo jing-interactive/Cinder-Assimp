@@ -256,8 +256,7 @@ namespace assimp
         scene->calculateDimensions();
 
         scene->loadAllMeshes();
-        auto rootMeshNode = scene->loadNodes(scene->mScene->mRootNode);
-        scene->addChild(rootMeshNode);
+        scene->loadNodes(scene->mScene->mRootNode);
 
         return newItem;
     }
