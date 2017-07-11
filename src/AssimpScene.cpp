@@ -95,7 +95,7 @@ inline std::string fromAssimp(const aiString &s)
 
 namespace assimp
 {
-    struct CinderLogger : public ::Assimp::Logger
+    struct Logger : public ::Assimp::Logger
     {
         void OnDebug(const char* message) {
             CI_LOG_D(message);
@@ -124,7 +124,7 @@ namespace assimp
         }
 
     };
-    CinderLogger ciLogger;
+    Logger ciLogger;
 
     void setupLogger()
     {
