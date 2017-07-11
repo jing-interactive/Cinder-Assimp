@@ -253,6 +253,7 @@ namespace assimp
         if (!scene->mScene)
             throw ci::Exception(importer.GetErrorString());
 
+        scene->mFilePath = filename;
         scene->calculateDimensions();
 
         scene->loadAllMeshes();
