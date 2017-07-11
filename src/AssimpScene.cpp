@@ -223,12 +223,18 @@ namespace assimp
         }
     }
 
-    Scene::Scene(fs::path filename) :
-        mSkinningEnabled(false),
+    Scene::Scene() : mSkinningEnabled(false),
         mAnimationEnabled(false),
-        mFilePath(filename),
         mAnimationIndex(0)
     {
+
+    }
+
+    shared_ptr<nodes::Node3D> Scene::create(fs::path filename)
+    {
+        shared_ptr<Node3D> newItem = make_shared<Scene>();
+        Scene* scene = (Scene*)newItem.get();
+
         // FIXME: aiProcessPreset_TargetRealtime_MaxQuality contains
         // aiProcess_Debone which is buggy in 3.0.1270
         unsigned flags = aiProcess_Triangulate |
@@ -243,15 +249,17 @@ namespace assimp
             aiPrimitiveType_LINE | aiPrimitiveType_POINT);
         importer.SetPropertyInteger(AI_CONFIG_PP_PTV_NORMALIZE, true);
 
-        mScene = importer.ReadFile(filename.string(), flags);
-        if (!mScene)
+        scene->mScene = importer.ReadFile(filename.string(), flags);
+        if (!scene->mScene)
             throw ci::Exception(importer.GetErrorString());
 
-        calculateDimensions();
+        scene->calculateDimensions();
 
-        loadAllMeshes();
-		auto rootNode = loadNodes(mScene->mRootNode);
-		addChild(rootNode);
+        scene->loadAllMeshes();
+        auto rootMeshNode = scene->loadNodes(scene->mScene->mRootNode);
+        scene->addChild(rootMeshNode);
+
+        return newItem;
     }
 
     void Scene::calculateDimensions()

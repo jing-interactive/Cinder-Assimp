@@ -73,10 +73,10 @@ namespace assimp
     class Scene : public MeshNode
     {
     public:
-        Scene() {}
+        Scene();
 
         //! Constructs and does the parsing of the file from \a filename.
-        Scene(fs::path filename);
+        static std::shared_ptr<nodes::Node3D> create(fs::path filename);
 
         //! Updates model animation and skinning.
         void update();

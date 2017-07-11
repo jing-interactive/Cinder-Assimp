@@ -32,30 +32,30 @@ solution "cinder-assimp"
         configuration "x64"
             targetdir ("lib/msw/x64")
 
-    configuration "vs*uwp"
+    -- configuration "vs*uwp"
 
-        platforms {"x64", "x86"}
+    --     platforms {"x64", "x86"}
 
-        defines {
-            "_CRT_SECURE_NO_WARNINGS",
-            "_CRT_SECURE_NO_DEPRECATE",
-        }
+    --     defines {
+    --         "_CRT_SECURE_NO_WARNINGS",
+    --         "_CRT_SECURE_NO_DEPRECATE",
+    --     }
 
-        disablewarnings {
-            "4244",
-            "4305",
-            "4996",
-        }
+    --     disablewarnings {
+    --         "4244",
+    --         "4305",
+    --         "4996",
+    --     }
 
-        flags {
-            "StaticRuntime",
-        }
+    --     flags {
+    --         "StaticRuntime",
+    --     }
 
-        configuration "x86"
-            targetdir ("lib/msw-uwp/x86")
+    --     configuration "x86"
+    --         targetdir ("lib/msw-uwp/x86")
 
-        configuration "x64"
-            targetdir ("lib/msw-uwp/x64")
+    --     configuration "x64"
+    --         targetdir ("lib/msw-uwp/x64")
 
     configuration "macosx"
         platforms {"x64"}
