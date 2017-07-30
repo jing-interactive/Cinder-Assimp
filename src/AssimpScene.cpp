@@ -511,7 +511,8 @@ namespace assimp
                     }
                 }
 
-                meshRef->mTextures[type] = am::texture2d(realPath.string(), format, true);
+                bool isAsync = false;
+                meshRef->mTextures[type] = am::texture2d(realPath.string(), format, isAsync);
             }
         }
 
