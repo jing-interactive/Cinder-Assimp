@@ -480,7 +480,7 @@ namespace assimp
                         break;
 
                     case aiTextureMapMode_Decal:
-                        format.setWrapS(GL_CLAMP_TO_BORDER);
+                        format.setWrapS(GL_CLAMP_TO_EDGE);
                         break;
 
                     case aiTextureMapMode_Mirror:
@@ -502,7 +502,7 @@ namespace assimp
                         break;
 
                     case aiTextureMapMode_Decal:
-                        format.setWrapT(GL_CLAMP_TO_BORDER);
+                        format.setWrapT(GL_CLAMP_TO_EDGE);
                         break;
 
                     case aiTextureMapMode_Mirror:
