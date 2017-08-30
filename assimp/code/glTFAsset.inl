@@ -2,7 +2,8 @@
 Open Asset Import Library (assimp)
 ----------------------------------------------------------------------
 
-Copyright (c) 2006-2016, assimp team
+Copyright (c) 2006-2017, assimp team
+
 All rights reserved.
 
 Redistribution and use of this software in source and binary forms,
@@ -1227,7 +1228,7 @@ inline void Scene::Read(Value& obj, Asset& r)
 inline void AssetMetadata::Read(Document& doc)
 {
     // read the version, etc.
-    int statedVersion = 0;
+    float statedVersion = 0;
     if (Value* obj = FindObject(doc, "asset")) {
         ReadMember(*obj, "copyright", copyright);
         ReadMember(*obj, "generator", generator);
@@ -1249,7 +1250,7 @@ inline void AssetMetadata::Read(Document& doc)
 
     if (version != 1) {
         char msg[128];
-        ai_snprintf(msg, 128, "GLTF: Unsupported glTF version: %d", version);
+        ai_snprintf(msg, 128, "GLTF: Unsupported glTF version: %.0f", version);
         throw DeadlyImportError(msg);
     }
 }

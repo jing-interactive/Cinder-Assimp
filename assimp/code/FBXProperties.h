@@ -2,7 +2,8 @@
 Open Asset Import Library (assimp)
 ----------------------------------------------------------------------
 
-Copyright (c) 2006-2016, assimp team
+Copyright (c) 2006-2017, assimp team
+
 All rights reserved.
 
 Redistribution and use of this software in source and binary forms,
@@ -54,14 +55,12 @@ namespace FBX {
 // Forward declarations
 class Element;
 
-
 /** Represents a dynamic property. Type info added by deriving classes,
  *  see #TypedProperty.
  Example:
  @verbatim
    P: "ShininessExponent", "double", "Number", "",0.5
  @endvebatim
-
 */
 class Property
 {
@@ -77,7 +76,6 @@ public:
         return dynamic_cast<const T*>(this);
     }
 };
-
 
 template<typename T>
 class TypedProperty : public Property
@@ -137,38 +135,35 @@ private:
 
 // ------------------------------------------------------------------------------------------------
 template <typename T>
-inline T PropertyGet(const PropertyTable& in, const std::string& name,
-    const T& defaultValue)
-{
+inline 
+T PropertyGet(const PropertyTable& in, const std::string& name, const T& defaultValue) {
     const Property* const prop = in.Get(name);
-    if(!prop) {
+    if( nullptr == prop) {
         return defaultValue;
     }
 
     // strong typing, no need to be lenient
     const TypedProperty<T>* const tprop = prop->As< TypedProperty<T> >();
-    if(!tprop) {
+    if( nullptr == tprop) {
         return defaultValue;
     }
 
     return tprop->Value();
 }
 
-
 // ------------------------------------------------------------------------------------------------
 template <typename T>
-inline T PropertyGet(const PropertyTable& in, const std::string& name,
-    bool& result)
-{
+inline 
+T PropertyGet(const PropertyTable& in, const std::string& name, bool& result) {
     const Property* const prop = in.Get(name);
-    if(!prop) {
+    if( nullptr == prop) {
         result = false;
         return T();
     }
 
     // strong typing, no need to be lenient
     const TypedProperty<T>* const tprop = prop->As< TypedProperty<T> >();
-    if(!tprop) {
+    if( nullptr == tprop) {
         result = false;
         return T();
     }
@@ -176,7 +171,6 @@ inline T PropertyGet(const PropertyTable& in, const std::string& name,
     result = true;
     return tprop->Value();
 }
-
 
 } //! FBX
 } //! Assimp
