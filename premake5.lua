@@ -32,30 +32,30 @@ solution "cinder-assimp"
         configuration "x64"
             targetdir ("lib/msw/x64")
 
-    -- configuration "vs*uwp"
+    configuration "vs*uwp"
 
-    --     platforms {"x64", "x86"}
+        platforms {"x64", "x86"}
 
-    --     defines {
-    --         "_CRT_SECURE_NO_WARNINGS",
-    --         "_CRT_SECURE_NO_DEPRECATE",
-    --     }
+        defines {
+            "_CRT_SECURE_NO_WARNINGS",
+            "_CRT_SECURE_NO_DEPRECATE",
+        }
 
-    --     disablewarnings {
-    --         "4244",
-    --         "4305",
-    --         "4996",
-    --     }
+        disablewarnings {
+            "4244",
+            "4305",
+            "4996",
+        }
 
-    --     flags {
-    --         "StaticRuntime",
-    --     }
+        flags {
+            "StaticRuntime",
+        }
 
-    --     configuration "x86"
-    --         targetdir ("lib/msw-uwp/x86")
+        configuration "x86"
+            targetdir ("lib/msw_uwp/x86")
 
-    --     configuration "x64"
-    --         targetdir ("lib/msw-uwp/x64")
+        configuration "x64"
+            targetdir ("lib/msw_uwp/x64")
 
     configuration "macosx"
         platforms {"x64"}
@@ -64,7 +64,6 @@ solution "cinder-assimp"
 
     flags {
         "MultiProcessorCompile",
-        "C++11",
     }
 
     configuration "Debug"
@@ -75,6 +74,8 @@ solution "cinder-assimp"
     configuration "Release"
         defines { "NDEBUG" }
         flags { "Optimize"}
+
+    cppdialect "C++11"
 
     project "cinder-assimp"
         kind "StaticLib"
@@ -96,24 +97,22 @@ solution "cinder-assimp"
             "src/*",
         }
 
-        buildoptions { "-std=c++11" }
-
     project "assimp"
         kind "StaticLib"
 
         sysincludedirs {
             "assimp/include",
+            "assimp/contrib/irrXML",
             "assimp/contrib/zlib",
             "assimp/contrib/rapidjson/include",
         }
         
         includedirs {
             "assimp/include",
+            "assimp/contrib/irrXML",
             "assimp/contrib/zlib",
             "assimp/contrib/rapidjson/include",
         }
-
-        buildoptions { "-std=c++11" }
 
         defines {
             -- "SWIG",
@@ -164,6 +163,7 @@ solution "cinder-assimp"
             "ASSIMP_BUILD_NO_C4D_IMPORTER",
             "ASSIMP_BUILD_NO_3MF_IMPORTER",
             "ASSIMP_BUILD_NO_X3D_IMPORTER",
+            "ASSIMP_BUILD_NO_MMD_IMPORTER",
             
             "ASSIMP_BUILD_NO_STEP_EXPORTER",
             "ASSIMP_BUILD_NO_SIB_IMPORTER",
