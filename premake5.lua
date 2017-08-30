@@ -10,6 +10,7 @@ solution "cinder-assimp"
     configuration "vs*"
 
         platforms {"x64", "x86"}
+        cppdialect "C++11"
 
         defines {
             "_CRT_SECURE_NO_WARNINGS",
@@ -58,8 +59,8 @@ solution "cinder-assimp"
     --         targetdir ("lib/msw_uwp/x64")
 
     configuration "macosx"
+        cppdialect "gnu++11"
         platforms {"x64"}
-
         targetdir ("lib/macos")
 
     flags {
@@ -68,14 +69,12 @@ solution "cinder-assimp"
 
     configuration "Debug"
         defines { "DEBUG" }
-        flags { "Symbols"}
+        symbols "On"
         targetsuffix "-d"
 
     configuration "Release"
         defines { "NDEBUG" }
-        flags { "Optimize"}
-
-    cppdialect "C++11"
+        optimize "On"
 
     project "cinder-assimp"
         kind "StaticLib"
