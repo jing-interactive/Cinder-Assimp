@@ -250,6 +250,10 @@ void glTF2Importer::ImportMaterials(glTF2::Asset& r)
             SetMaterialColorProperty(r, pbrSG.diffuseFactor, aimat, AI_MATKEY_GLTF_PBRSPECULARGLOSSINESS_DIFFUSE_FACTOR);
             SetMaterialColorProperty(r, pbrSG.specularFactor, aimat, AI_MATKEY_GLTF_PBRSPECULARGLOSSINESS_SPECULAR_FACTOR);
             aimat->AddProperty(&pbrSG.glossinessFactor, 1, AI_MATKEY_GLTF_PBRSPECULARGLOSSINESS_GLOSSINESS_FACTOR);
+#define VINJN_FIX_FOR_DIFFUSE_TEXTURE
+#ifdef VINJN_FIX_FOR_DIFFUSE_TEXTURE 
+            SetMaterialTextureProperty(embeddedTexIdxs, r, pbrSG.diffuseTexture, aimat, aiTextureType_DIFFUSE);
+#endif
             SetMaterialTextureProperty(embeddedTexIdxs, r, pbrSG.diffuseTexture, aimat, AI_MATKEY_GLTF_PBRSPECULARGLOSSINESS_DIFFUSE_TEXTURE);
             SetMaterialTextureProperty(embeddedTexIdxs, r, pbrSG.specularGlossinessTexture, aimat, AI_MATKEY_GLTF_PBRSPECULARGLOSSINESS_SPECULARGLOSSINESS_TEXTURE);
         }
