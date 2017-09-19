@@ -25,6 +25,8 @@
 #include "../assimp/include/assimp/scene.h"
 #include "../assimp/include/assimp/postprocess.h"
 
+#include "../assimp/code/ProcessHelper.h"
+
 #include "../assimp/include/assimp/Logger.hpp"
 #include "../assimp/include/assimp/DefaultLogger.hpp"
 
@@ -131,7 +133,7 @@ namespace assimp
         ::Assimp::DefaultLogger::set(&ciLogger);
     }
 
-    const int kTextureTypeCount = aiTextureType_REFLECTION;
+    const int kTextureTypeCount = aiTextureType_UNKNOWN + 1;
 
     enum BlendMode
     {
@@ -166,11 +168,11 @@ namespace assimp
     {
         TriMesh::Format format;
         {
-
-            if (aim->HasPositions())            format.positions();
-            if (aim->HasNormals())              format.normals();
-            if (aim->GetNumColorChannels() > 0) format.colors(4);
-            if (aim->GetNumUVChannels() > 0)    format.texCoords0();
+            if (aim->HasPositions())                format.positions();
+            if (aim->HasNormals())                  format.normals();
+            if (aim->HasTangentsAndBitangents())    format.tangents();
+            if (aim->GetNumColorChannels() > 0)     format.colors(4);
+            if (aim->GetNumUVChannels() > 0)        format.texCoords0();
         }
 
         cim = TriMesh::create(format);
@@ -186,6 +188,14 @@ namespace assimp
             for (unsigned i = 0; i < aim->mNumVertices; ++i)
             {
                 cim->appendNormal(fromAssimp(aim->mNormals[i]));
+            }
+        }
+
+        if (aim->HasTangentsAndBitangents())
+        {
+            for (unsigned i = 0; i < aim->mNumVertices; ++i)
+            {
+                cim->appendTangent(fromAssimp(aim->mTangents[i]));
             }
         }
 
@@ -235,18 +245,17 @@ namespace assimp
         shared_ptr<Node3D> newItem = make_shared<Scene>();
         Scene* scene = (Scene*)newItem.get();
 
-        // FIXME: aiProcessPreset_TargetRealtime_MaxQuality contains
-        // aiProcess_Debone which is buggy in 3.0.1270
-        unsigned flags = aiProcess_Triangulate |
+        unsigned flags = 
+            aiProcess_Triangulate |
             //aiProcess_FlipUVs |
             aiProcessPreset_TargetRealtime_Quality |
             aiProcess_FindInstances |
             aiProcess_ValidateDataStructure |
-            aiProcess_OptimizeMeshes;
+            aiProcess_OptimizeMeshes
+            ;
 
         Assimp::Importer importer;
-        importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE,
-            aiPrimitiveType_LINE | aiPrimitiveType_POINT);
+        importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
         importer.SetPropertyInteger(AI_CONFIG_PP_PTV_NORMALIZE, true);
 
         scene->mScene = importer.ReadFile(filename.string(), flags);
@@ -271,7 +280,6 @@ namespace assimp
         }
         return mBoundingBox;
     }
-
 
     void Scene::calculateDimensions()
     {
@@ -381,7 +389,7 @@ namespace assimp
 
         aiString name;
         mtl->Get(AI_MATKEY_NAME, name);
-        app::console() << "material " << fromAssimp(name) << endl;
+        CI_LOG_I("material " << fromAssimp(name));
 
         // Culling
         int twoSided;
@@ -389,7 +397,7 @@ namespace assimp
         {
             meshRef->mTwoSided = true;
             meshRef->mMaterial.Face = GL_FRONT_AND_BACK;
-            app::console() << " two sided" << endl;
+            CI_LOG_I(" two sided");
         }
         else
         {
@@ -401,39 +409,39 @@ namespace assimp
         if (AI_SUCCESS == mtl->Get(AI_MATKEY_COLOR_DIFFUSE, dcolor))
         {
             meshRef->mMaterial.Diffuse = fromAssimp(dcolor);
-            app::console() << " diffuse: " << fromAssimp(dcolor) << endl;
+            CI_LOG_I(" diffuse: " << fromAssimp(dcolor));
         }
 
         if (AI_SUCCESS == mtl->Get(AI_MATKEY_COLOR_SPECULAR, scolor))
         {
             meshRef->mMaterial.Specular = fromAssimp(scolor);
-            app::console() << " specular: " << fromAssimp(scolor) << endl;
+            CI_LOG_I(" specular: " << fromAssimp(scolor));
         }
 
         if (AI_SUCCESS == mtl->Get(AI_MATKEY_COLOR_AMBIENT, acolor))
         {
             meshRef->mMaterial.Ambient = fromAssimp(acolor);
-            app::console() << " ambient: " << fromAssimp(acolor) << endl;
+            CI_LOG_I(" ambient: " << fromAssimp(acolor));
         }
 
         if (AI_SUCCESS == mtl->Get(AI_MATKEY_COLOR_EMISSIVE, ecolor))
         {
             meshRef->mMaterial.Emission = fromAssimp(ecolor);
-            app::console() << " emission: " << fromAssimp(ecolor) << endl;
+            CI_LOG_I(" emission: " << fromAssimp(ecolor));
         }
 
         // FIXME: not sensible data, obj .mtl Ns 96.078431 -> 384.314
         float shininessStrength = 1;
         if ( AI_SUCCESS == mtl->Get( AI_MATKEY_SHININESS_STRENGTH, shininessStrength ) )
         {
-            app::console() << "shininess strength: " << shininessStrength << endl;
+            CI_LOG_I("shininess strength: " << shininessStrength);
         }
         float shininess;
         if ( AI_SUCCESS == mtl->Get( AI_MATKEY_SHININESS, shininess ) )
         {
             meshRef->mMaterial.Shininess = shininess * shininessStrength;
-            app::console() << "shininess: " << shininess * shininessStrength << "[" <<
-                shininess << "]" << endl;
+            CI_LOG_I("shininess: " << shininess * shininessStrength << "[" <<
+                shininess << "]");
         }
 
         int blendMode;
@@ -443,14 +451,14 @@ namespace assimp
         }
 
         // Load Textures
-        int texIndex = 0;
-        aiString texPath;
-
+        const int kTexSlot = 0; // TODO:
         for (int type = 0; type < kTextureTypeCount; type++)
         {
-            if (AI_SUCCESS == mtl->GetTexture((aiTextureType)type, texIndex, &texPath))
+            auto aiType = (aiTextureType)type;
+            aiString texPath;
+            if (AI_SUCCESS == mtl->GetTexture(aiType, kTexSlot, &texPath))
             {
-                app::console() << " texture " << texPath.data;
+                CI_LOG_I(Assimp::TextureTypeToString(aiType) << " - " << texPath.data);
                 string temp(texPath.data);
                 replace(temp.begin(), temp.end(), '\\', '/');
                 fs::path texFsPath(temp);
@@ -458,7 +466,7 @@ namespace assimp
                 fs::path relTexPath = texFsPath.parent_path();
                 fs::path texFile = texFsPath.filename();
                 fs::path realPath = modelFolder / relTexPath / texFile;
-                app::console() << " [" << realPath.string() << "]" << endl;
+                CI_LOG_I(realPath.string());
 
                 gl::Texture::Format format;
                 format.enableMipmapping();
@@ -525,7 +533,6 @@ namespace assimp
             meshRef->mAnimatedNorm.resize(mesh->mNumVertices);
         }
 
-
         meshRef->mIndices.resize(mesh->mNumFaces * 3);
         unsigned j = 0;
         for (unsigned x = 0; x < mesh->mNumFaces; ++x)
@@ -541,15 +548,12 @@ namespace assimp
 
     void Scene::loadAllMeshes()
     {
-        app::console() << "loading model " << mFilePath.filename().string() <<
-            " [" << mFilePath.string() << "] " << endl;
+        CI_LOG_I("loading model " << mFilePath.filename().string() <<
+            " [" << mFilePath.string() << "] ");
         for (unsigned i = 0; i < mScene->mNumMeshes; ++i)
         {
             string name = fromAssimp(mScene->mMeshes[i]->mName);
-            app::console() << "loading mesh " << i;
-            if (name != "")
-                app::console() << " [" << name << "]";
-            app::console() << endl;
+            CI_LOG_I("loading mesh " << i << ": " << name);
             MeshRef meshRef = convertAiMesh(mScene->mMeshes[i]);
             mMeshes.push_back(meshRef);
         }
@@ -559,7 +563,7 @@ namespace assimp
         setNormalizedTime(0);
 #endif
 
-        app::console() << "finished loading model " << mFilePath.filename().string() << endl;
+        CI_LOG_I("finished loading model " << mFilePath.filename().string());
     }
 
     void Scene::updateAnimation(size_t animationIndex, double currentTime)
@@ -838,9 +842,23 @@ namespace assimp
     {
         for (const auto& meshRef : mMeshes)
         {
-            if (meshRef->mTextures[aiTextureType_DIFFUSE])
+            vector<unique_ptr<gl::ScopedTextureBind>> scopedTexBinds;
+            map<int, int> texSemanticTable =
             {
-                meshRef->mTextures[aiTextureType_DIFFUSE]->bind();
+                { aiTextureType_DIFFUSE, 0 },   // Base
+                { aiTextureType_NORMALS, 1 },   // Normal
+                { aiTextureType_EMISSIVE, 2 },  // Emissive
+                { aiTextureType_UNKNOWN, 3 },   // Metal-roughness
+                { aiTextureType_LIGHTMAP, 4 },  // AO
+            };
+
+            for (auto& kv : texSemanticTable)
+            {
+                if (meshRef->mTextures[kv.first])
+                {
+                    scopedTexBinds.emplace_back(make_unique<gl::ScopedTextureBind>(
+                        meshRef->mTextures[kv.first], kv.second));
+                }
             }
 
             if (meshRef->blendMode == BlendDefault)

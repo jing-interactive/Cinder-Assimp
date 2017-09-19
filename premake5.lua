@@ -170,7 +170,7 @@ solution "cinder-assimp"
             -- "ASSIMP_BUILD_NO_MAKELEFTHANDED_PROCESS",
             -- "ASSIMP_BUILD_NO_FLIPUVS_PROCESS",
             -- "ASSIMP_BUILD_NO_FLIPWINDINGORDER_PROCESS",
-            "ASSIMP_BUILD_NO_CALCTANGENTS_PROCESS",
+            -- "ASSIMP_BUILD_NO_CALCTANGENTS_PROCESS",
             "ASSIMP_BUILD_NO_JOINVERTICES_PROCESS",
             -- "ASSIMP_BUILD_NO_TRIANGULATE_PROCESS",
             "ASSIMP_BUILD_NO_GENFACENORMALS_PROCESS",
@@ -245,5 +245,6 @@ solution "cinder-assimp"
             "assimp/code/glTFImporter.cpp",
             "assimp/code/glTF2Importer.cpp",
             "assimp/code/MakeVerboseFormat.cpp",
+            "assimp/code/CalcTangentsProcess.cpp",
             "assimp/contrib/irrXML/*",
         }
