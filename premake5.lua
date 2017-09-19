@@ -243,6 +243,7 @@ solution "cinder-assimp"
             "assimp/code/ObjFileMtlImporter.cpp",
             "assimp/code/ObjFileParser.cpp",
             "assimp/code/glTFImporter.cpp",
+            "assimp/code/glTF2Importer.cpp",
             "assimp/code/MakeVerboseFormat.cpp",
             "assimp/contrib/irrXML/*",
         }
