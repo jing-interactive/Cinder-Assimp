@@ -842,7 +842,7 @@ namespace assimp
     {
         for (const auto& meshRef : mMeshes)
         {
-            vector<unique_ptr<gl::ScopedTextureBind>> scopedTexBinds;
+            vector<shared_ptr<gl::ScopedTextureBind>> scopedTexBinds;
             map<int, int> texSemanticTable =
             {
                 { aiTextureType_DIFFUSE, 0 },   // Base
@@ -856,7 +856,7 @@ namespace assimp
             {
                 if (meshRef->mTextures[kv.first])
                 {
-                    scopedTexBinds.emplace_back(make_unique<gl::ScopedTextureBind>(
+                    scopedTexBinds.emplace_back(make_shared<gl::ScopedTextureBind>(
                         meshRef->mTextures[kv.first], kv.second));
                 }
             }
