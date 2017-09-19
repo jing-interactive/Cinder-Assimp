@@ -123,7 +123,7 @@ solution "cinder-assimp"
             "ASSIMP_BUILD_NO_MD3_IMPORTER",
             "ASSIMP_BUILD_NO_MDL_IMPORTER",
             "ASSIMP_BUILD_NO_MD2_IMPORTER",
-            "ASSIMP_BUILD_NO_PLY_IMPORTER",
+            -- "ASSIMP_BUILD_NO_PLY_IMPORTER",
             "ASSIMP_BUILD_NO_ASE_IMPORTER",
             -- "ASSIMP_BUILD_NO_OBJ_IMPORTER",
             "ASSIMP_BUILD_NO_AMF_IMPORTER",
