@@ -250,7 +250,7 @@ namespace assimp
             //aiProcess_FlipUVs |
             aiProcessPreset_TargetRealtime_Quality |
             aiProcess_FindInstances |
-            aiProcess_ValidateDataStructure |
+            //aiProcess_ValidateDataStructure |
             aiProcess_OptimizeMeshes
             ;
 
