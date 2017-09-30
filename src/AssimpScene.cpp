@@ -242,8 +242,8 @@ namespace assimp
 
     shared_ptr<nodes::Node3D> Scene::create(fs::path filename)
     {
-        shared_ptr<Node3D> newItem = make_shared<Scene>();
-        Scene* scene = (Scene*)newItem.get();
+        shared_ptr<Node3D> newScene = make_shared<Scene>();
+        Scene* scenePtr = (Scene*)newScene.get();
 
         unsigned flags = 
             aiProcess_Triangulate |
@@ -258,16 +258,17 @@ namespace assimp
         importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
         importer.SetPropertyInteger(AI_CONFIG_PP_PTV_NORMALIZE, true);
 
-        scene->mScene = importer.ReadFile(filename.string(), flags);
-        if (!scene->mScene)
+        scenePtr->mScene = importer.ReadFile(filename.string(), flags);
+        if (!scenePtr->mScene)
             throw ci::Exception(importer.GetErrorString());
 
-        scene->mFilePath = filename;
+        scenePtr->mFilePath = filename;
+        //scenePtr->setName(filename.filename().string());
 
-        scene->loadAllMeshes();
-        scene->loadNodes(scene->mScene->mRootNode);
+        scenePtr->setupSceneMeshes();
+        scenePtr->setupNodes(scenePtr->mScene->mRootNode, newScene);
 
-        return newItem;
+        return newScene;
     }
     
     AxisAlignedBox Scene::getBoundingBox()
@@ -333,14 +334,14 @@ namespace assimp
         *trafo = prev;
     }
 
-    MeshNodeRef Scene::loadNodes(const aiNode *nd, MeshNodeRef parentRef)
+    void Scene::setupNodes(const aiNode *nd, nodes::Node3DRef parentRef)
     {
         MeshNodeRef nodeRef = MeshNodeRef(new MeshNode());
-        nodeRef->setParent(parentRef);
+        if (parentRef) parentRef->addChild(nodeRef);
+
         string nodeName = fromAssimp(nd->mName);
         nodeRef->setName(nodeName);
         mNodeMap[nodeName] = nodeRef;
-        mNodeNames.push_back(nodeName);
 
         // store transform
         aiVector3D scaling;
@@ -352,29 +353,21 @@ namespace assimp
         nodeRef->setPosition(fromAssimp(position));
 
         // meshes
-        for (unsigned i = 0; i < nd->mNumMeshes; ++i)
+        for (auto i = 0; i < nd->mNumMeshes; ++i)
         {
-            unsigned meshId = nd->mMeshes[i];
+            auto meshId = nd->mMeshes[i];
             //if (meshId >= mMeshes.size())
             //    throw ci::Exception("node " + nodeRef->getName() + " references mesh #" +
             //        toString< unsigned >(meshId) + " from " +
             //        toString< size_t >(mMeshes.size()) + " meshes.");
-            nodeRef->mMeshes.push_back(mMeshes[meshId]);
-        }
-
-        // store the node with meshes for rendering
-        if (nd->mNumMeshes > 0)
-        {
-            mNodes.push_back(nodeRef);
+            nodeRef->mMeshes.push_back(mSceneMeshes[meshId]);
         }
 
         // process all children
         for (unsigned n = 0; n < nd->mNumChildren; ++n)
         {
-            MeshNodeRef childRef = loadNodes(nd->mChildren[n], nodeRef);
-            nodeRef->addChild(childRef);
+            setupNodes(nd->mChildren[n], nodeRef);
         }
-        return nodeRef;
     }
 
     MeshRef Scene::convertAiMesh(const aiMesh *mesh)
@@ -546,7 +539,7 @@ namespace assimp
         return meshRef;
     }
 
-    void Scene::loadAllMeshes()
+    void Scene::setupSceneMeshes()
     {
         CI_LOG_I("loading model " << mFilePath.filename().string() <<
             " [" << mFilePath.string() << "] ");
@@ -555,7 +548,7 @@ namespace assimp
             string name = fromAssimp(mScene->mMeshes[i]->mName);
             CI_LOG_I("loading mesh " << i << ": " << name);
             MeshRef meshRef = convertAiMesh(mScene->mMeshes[i]);
-            mMeshes.push_back(meshRef);
+            mSceneMeshes.push_back(meshRef);
         }
 
 #if 0
@@ -702,8 +695,9 @@ namespace assimp
 
     void Scene::updateSkinning()
     {
-        for (const auto& nodeRef : mNodes)
+        for (const auto& rawNodeRef : mChildren)
         {
+            MeshNode* nodeRef = (MeshNode*)rawNodeRef.get();
             for (const auto& meshRef : nodeRef->mMeshes)
             {
                 // current mesh we are introspecting
@@ -772,8 +766,10 @@ namespace assimp
 
     void Scene::updateMeshes()
     {
-        for (const auto& nodeRef : mNodes)
+        for (const auto& rawNodeRef : mChildren)
         {
+            MeshNode* nodeRef = (MeshNode*)rawNodeRef.get();
+
             for (const auto& meshRef : nodeRef->mMeshes)
             {
                 if (meshRef->mValidCache)
@@ -818,8 +814,9 @@ namespace assimp
 
         mSkinningEnabled = enable;
         // invalidate mesh cache
-        for (const auto& nodeRef : mNodes)
+        for (const auto& rawNodeRef : mChildren)
         {
+            MeshNode* nodeRef = (MeshNode*)rawNodeRef.get();
             for (const auto& meshRef : nodeRef->mMeshes)
             {
                 meshRef->mValidCache = false;

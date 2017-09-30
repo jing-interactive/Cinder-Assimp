@@ -560,7 +560,7 @@ bool Accessor::ExtractData(T*& outData)
     const size_t stride = byteStride ? byteStride : elemSize;
 
     const size_t targetElemSize = sizeof(T);
-    ai_assert(elemSize <= targetElemSize);
+    //ai_assert(elemSize <= targetElemSize);
 
     ai_assert(count*stride <= bufferView->byteLength);
 
@@ -570,7 +570,7 @@ bool Accessor::ExtractData(T*& outData)
     }
     else {
         for (size_t i = 0; i < count; ++i) {
-            memcpy(outData + i, data + i*stride, elemSize);
+            memcpy(outData + i, data + i*stride, targetElemSize);
         }
     }
 
@@ -823,6 +823,9 @@ namespace {
         else if ((pos = Compare(attr, "NORMAL"))) {
             v = &(p.attributes.normal);
         }
+        else if ((pos = Compare(attr, "TANGENT"))) {
+            v = &(p.attributes.tangent);
+        }
         else if ((pos = Compare(attr, "TEXCOORD"))) {
             v = &(p.attributes.texcoord);
         }
@@ -1048,13 +1051,13 @@ inline void Asset::Load(const std::string& pFile)
 
     // Read the "scene" property, which specifies which scene to load
     // and recursively load everything referenced by it
-    if (Value* scene = FindUInt(doc, "scene")) {
-        unsigned int sceneIndex = scene->GetUint();
-
-        Ref<Scene> s = scenes.Retrieve(sceneIndex);
-
-        this->scene = s;
+    Value* scene = FindUInt(doc, "scene");
+    unsigned int sceneIndex = 0;
+    if (scene) {
+        sceneIndex = scene->GetUint();
     }
+    Ref<Scene> s = scenes.Retrieve(sceneIndex);
+    this->scene = s;
 
     // Clean up
     for (size_t i = 0; i < mDicts.size(); ++i) {

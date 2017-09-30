@@ -49,6 +49,24 @@ namespace assimp
 {
     void setupLogger();
 
+    // Copied from aiTextureType
+    enum TextureType
+    {
+        TextureType_NONE = 0x0,
+        TextureType_DIFFUSE = 0x1,
+        TextureType_SPECULAR = 0x2,
+        TextureType_AMBIENT = 0x3,
+        TextureType_EMISSIVE = 0x4,
+        TextureType_HEIGHT = 0x5,
+        TextureType_NORMALS = 0x6,
+        TextureType_SHININESS = 0x7,
+        TextureType_OPACITY = 0x8,
+        TextureType_DISPLACEMENT = 0x9,
+        TextureType_LIGHTMAP = 0xA,
+        TextureType_REFLECTION = 0xB,
+        TextureType_UNKNOWN = 0xC,
+    };
+
     struct Material
     {
         ColorA          Ambient;
@@ -87,9 +105,6 @@ namespace assimp
         //! Returns the node called \a name.
         MeshNodeRef getAssimpNode(const std::string &name);
 
-        //! Returns all node names in the model in a std::vector as std::string's.
-        const std::vector< std::string > &getNodeNames() { return mNodeNames; }
-
         //! Enables/disables skinning, when the model's bones distort the vertices.
         void enableSkinning(bool enable = true);
 
@@ -97,7 +112,7 @@ namespace assimp
         void enableAnimation(bool enable = true) { mAnimationEnabled = enable; }
 
         //! Returns the total number of meshes in the model.
-        size_t getNumMeshes() const { return mMeshes.size(); }
+        size_t getNumMeshes() const { return mSceneMeshes.size(); }
 
         //! Returns the number of animations in the scene.
         size_t getNumAnimations() const;
@@ -112,8 +127,8 @@ namespace assimp
         void setTime(double t);
 
     private:
-        void loadAllMeshes();
-        MeshNodeRef loadNodes(const aiNode* nd, MeshNodeRef parentRef = MeshNodeRef());
+        void setupSceneMeshes();
+        void setupNodes(const aiNode* nd, nodes::Node3DRef parentRef = nodes::Node3DRef());
         MeshRef convertAiMesh(const aiMesh *mesh);
 
         void calculateDimensions();
@@ -129,10 +144,9 @@ namespace assimp
 
         AxisAlignedBox mBoundingBox;
 
-        std::vector< MeshNodeRef > mNodes; /// nodes with meshes
-
-        std::vector< std::string > mNodeNames;
         std::map< std::string, MeshNodeRef > mNodeMap;
+
+        std::vector< MeshRef > mSceneMeshes;
 
         bool mSkinningEnabled;
         bool mAnimationEnabled;
