@@ -351,7 +351,7 @@ void glTF2Importer::ImportMeshes(glTF2::Asset& r)
 
             if (attr.normal.size() > 0 && attr.normal[0]) attr.normal[0]->ExtractData(aim->mNormals);
 
-            if (attr.tangent.size() > 0 && attr.tangent[0]) attr.tangent[0]->ExtractData(aim->mTangents);
+            //if (attr.tangent.size() > 0 && attr.tangent[0]) attr.tangent[0]->ExtractData(aim->mTangents);
 
             for (size_t tc = 0; tc < attr.texcoord.size() && tc < AI_MAX_NUMBER_OF_TEXTURECOORDS; ++tc) {
                 attr.texcoord[tc]->ExtractData(aim->mTextureCoords[tc]);
