@@ -142,9 +142,8 @@ namespace assimp
         BlendAdditive,
     };
 
-    class Mesh
+    struct Mesh
     {
-    public:
         const aiMesh *mAiMesh;
 
         gl::TextureRef mTextures[kTextureTypeCount];
@@ -161,33 +160,39 @@ namespace assimp
 
         std::string mName;
         TriMeshRef mCachedTriMesh;
+        TriMesh::Format meshFormat;
+
         bool mValidCache;
+
+        void setupFromAiMesh(const aiMesh *aim);
+        void draw();
     };
 
-    static void fromAssimp(const aiMesh *aim, TriMeshRef& cim)
+    void Mesh::setupFromAiMesh(const aiMesh *aim)
     {
-        TriMesh::Format format;
+        mAiMesh = aim;
+
         {
-            if (aim->HasPositions())                format.positions();
-            if (aim->HasNormals())                  format.normals();
-            if (aim->HasTangentsAndBitangents())    format.tangents();
-            if (aim->GetNumColorChannels() > 0)     format.colors(4);
-            if (aim->GetNumUVChannels() > 0)        format.texCoords0();
+            if (aim->HasPositions())                meshFormat.positions();
+            if (aim->HasNormals())                  meshFormat.normals();
+            if (aim->HasTangentsAndBitangents())    meshFormat.tangents();
+            if (aim->GetNumColorChannels() > 0)     meshFormat.colors(4);
+            if (aim->GetNumUVChannels() > 0)        meshFormat.texCoords0();
         }
 
-        cim = TriMesh::create(format);
+        mCachedTriMesh = TriMesh::create(meshFormat);
 
         // copy vertices
         for (unsigned i = 0; i < aim->mNumVertices; ++i)
         {
-            cim->appendPosition(fromAssimp(aim->mVertices[i]));
+            mCachedTriMesh->appendPosition(fromAssimp(aim->mVertices[i]));
         }
 
         if (aim->HasNormals())
         {
             for (unsigned i = 0; i < aim->mNumVertices; ++i)
             {
-                cim->appendNormal(fromAssimp(aim->mNormals[i]));
+                mCachedTriMesh->appendNormal(fromAssimp(aim->mNormals[i]));
             }
         }
 
@@ -195,7 +200,7 @@ namespace assimp
         {
             for (unsigned i = 0; i < aim->mNumVertices; ++i)
             {
-                cim->appendTangent(fromAssimp(aim->mTangents[i]));
+                mCachedTriMesh->appendTangent(fromAssimp(aim->mTangents[i]));
             }
         }
 
@@ -205,7 +210,7 @@ namespace assimp
         {
             for (unsigned i = 0; i < aim->mNumVertices; ++i)
             {
-                cim->appendTexCoord({ aim->mTextureCoords[0][i].x, aim->mTextureCoords[0][i].y });
+                mCachedTriMesh->appendTexCoord({ aim->mTextureCoords[0][i].x, aim->mTextureCoords[0][i].y });
             }
         }
 
@@ -214,7 +219,7 @@ namespace assimp
         {
             for (unsigned i = 0; i < aim->mNumVertices; ++i)
             {
-                cim->appendColorRgba(fromAssimp(aim->mColors[0][i]));
+                mCachedTriMesh->appendColorRgba(fromAssimp(aim->mColors[0][i]));
             }
         }
 
@@ -227,7 +232,7 @@ namespace assimp
                     toString< unsigned >(i));
             }
 
-            cim->appendTriangle(aim->mFaces[i].mIndices[0],
+            mCachedTriMesh->appendTriangle(aim->mFaces[i].mIndices[0],
                 aim->mFaces[i].mIndices[1],
                 aim->mFaces[i].mIndices[2]);
         }
@@ -517,8 +522,7 @@ namespace assimp
             }
         }
 
-        meshRef->mAiMesh = mesh;
-        fromAssimp(mesh, meshRef->mCachedTriMesh);
+        meshRef->setupFromAiMesh(mesh);
         meshRef->mValidCache = true;
         meshRef->mAnimatedPos.resize(mesh->mNumVertices);
         if (mesh->HasNormals())
@@ -722,12 +726,10 @@ namespace assimp
 
                 meshRef->mValidCache = false;
 
-                meshRef->mAnimatedPos.assign(meshRef->mAnimatedPos.size(),
-                    aiVector3D(0, 0, 0));
+                meshRef->mAnimatedPos.resize(meshRef->mAnimatedPos.size());
                 if (mesh->HasNormals())
                 {
-                    meshRef->mAnimatedNorm.assign(meshRef->mAnimatedNorm.size(),
-                        aiVector3D(0, 0, 0));
+                    meshRef->mAnimatedNorm.resize(meshRef->mAnimatedNorm.size());
                 }
 
                 // loop through all vertex weights of all bones
@@ -839,36 +841,57 @@ namespace assimp
     {
         for (const auto& meshRef : mMeshes)
         {
-            vector<shared_ptr<gl::ScopedTextureBind>> scopedTexBinds;
-            map<int, int> texSemanticTable =
-            {
-                { aiTextureType_DIFFUSE, 0 },   // Base
-                { aiTextureType_NORMALS, 1 },   // Normal
-                { aiTextureType_EMISSIVE, 2 },  // Emissive
-                { aiTextureType_UNKNOWN, 3 },   // Metal-roughness
-                { aiTextureType_LIGHTMAP, 4 },  // AO
-            };
+            meshRef->draw();
+        }
+    }
 
-            for (auto& kv : texSemanticTable)
+    void Mesh::draw()
+    {
+        vector<shared_ptr<gl::ScopedTextureBind>> scopedTexBinds;
+        map<int, int> texSemanticTable =
+        {
+            { aiTextureType_DIFFUSE, 0 },   // Base
+            { aiTextureType_NORMALS, 1 },   // Normal
+            { aiTextureType_EMISSIVE, 2 },  // Emissive
+            { aiTextureType_UNKNOWN, 3 },   // Metal-roughness
+            { aiTextureType_LIGHTMAP, 4 },  // AO
+        };
+
+        for (auto& kv : texSemanticTable)
+        {
+            if (mTextures[kv.first])
             {
-                if (meshRef->mTextures[kv.first])
-                {
-                    scopedTexBinds.emplace_back(make_shared<gl::ScopedTextureBind>(
-                        meshRef->mTextures[kv.first], kv.second));
-                }
+                scopedTexBinds.emplace_back(make_shared<gl::ScopedTextureBind>(
+                    mTextures[kv.first], kv.second));
             }
+        }
 
-            if (meshRef->blendMode == BlendDefault)
-                gl::enableAlphaBlending();
-            else if (meshRef->blendMode == BlendAdditive)
-                gl::enableAdditiveBlending();
+        if (blendMode == BlendDefault)
+            gl::enableAlphaBlending();
+        else if (blendMode == BlendAdditive)
+            gl::enableAdditiveBlending();
 
-            if (meshRef->mTwoSided)
-                gl::enable(GL_CULL_FACE);
-            else
-                gl::disable(GL_CULL_FACE);
+        if (mTwoSided)
+            gl::disable(GL_CULL_FACE);
+        else
+            gl::enable(GL_CULL_FACE);
 
-            gl::draw(*meshRef->mCachedTriMesh);
+        gl::draw(*mCachedTriMesh);
+    }
+
+    void Scene::updateShaderDef(ShaderDefine& shaderDef)
+    {
+        for (auto& meshRef : mSceneMeshes)
+        {
+            if (meshRef->mTextures[aiTextureType_DIFFUSE]) shaderDef.HAS_BASECOLORMAP = true;
+            if (meshRef->mTextures[aiTextureType_NORMALS]) shaderDef.HAS_NORMALMAP = true;
+            if (meshRef->mTextures[aiTextureType_EMISSIVE]) shaderDef.HAS_EMISSIVEMAP = true;
+            if (meshRef->mTextures[aiTextureType_UNKNOWN]) shaderDef.HAS_METALROUGHNESSMAP = true;
+            if (meshRef->mTextures[aiTextureType_LIGHTMAP]) shaderDef.HAS_OCCLUSIONMAP = true;
+
+            if (meshRef->meshFormat.mTexCoords0Dims > 0) shaderDef.HAS_UV = true;
+            if (meshRef->meshFormat.mNormalsDims > 0) shaderDef.HAS_NORMALS = true;
+            if (meshRef->meshFormat.mTangentsDims > 0) shaderDef.HAS_TANGENTS = true;
         }
     }
 

@@ -67,6 +67,21 @@ namespace assimp
         TextureType_UNKNOWN = 0xC,
     };
 
+    struct ShaderDefine
+    {
+        bool HAS_NORMALS;
+        bool HAS_TANGENTS;
+        bool HAS_UV;
+
+        bool HAS_IBL;
+        bool HAS_BASECOLORMAP;
+        bool HAS_NORMALMAP;
+        bool HAS_EMISSIVEMAP;
+        bool HAS_METALROUGHNESSMAP;
+        bool HAS_OCCLUSIONMAP;
+        bool HAS_TEX_LOD;
+    };
+
     struct Material
     {
         ColorA          Ambient;
@@ -77,7 +92,7 @@ namespace assimp
         GLenum          Face;
     };
 
-    class Mesh;
+    struct Mesh;
     typedef std::shared_ptr< Mesh > MeshRef;
 
     struct MeshNode : public nodes::Node3D
@@ -92,6 +107,8 @@ namespace assimp
     {
     public:
         Scene();
+
+        void updateShaderDef(ShaderDefine& shaderDef);
 
         //! Constructs and does the parsing of the file from \a filename.
         static std::shared_ptr<nodes::Node3D> create(fs::path filename);
@@ -111,8 +128,7 @@ namespace assimp
         //! Enables/disables animation.
         void enableAnimation(bool enable = true) { mAnimationEnabled = enable; }
 
-        //! Returns the total number of meshes in the model.
-        size_t getNumMeshes() const { return mSceneMeshes.size(); }
+        std::vector< MeshRef > mSceneMeshes;
 
         //! Returns the number of animations in the scene.
         size_t getNumAnimations() const;
@@ -145,8 +161,6 @@ namespace assimp
         AxisAlignedBox mBoundingBox;
 
         std::map< std::string, MeshNodeRef > mNodeMap;
-
-        std::vector< MeshRef > mSceneMeshes;
 
         bool mSkinningEnabled;
         bool mAnimationEnabled;
