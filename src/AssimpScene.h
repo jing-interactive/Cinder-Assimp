@@ -38,6 +38,11 @@ template <typename TReal>
 class aiMatrix4x4t;
 typedef aiMatrix4x4t<float> aiMatrix4x4;
 
+namespace Assimp
+{
+    class Importer;
+}
+
 namespace cinder
 {
     class TriMesh;
@@ -99,6 +104,7 @@ namespace assimp
     {
         std::vector< MeshRef > mMeshes;
         virtual void draw();
+        virtual inline std::string toString() const { return "MeshNode"; }
     };
 
     typedef std::shared_ptr< MeshNode > MeshNodeRef;
@@ -108,13 +114,15 @@ namespace assimp
     public:
         Scene();
 
+        virtual inline std::string toString() const { return "Scene"; }
+
         void updateShaderDef(ShaderDefine& shaderDef);
 
         //! Constructs and does the parsing of the file from \a filename.
         static std::shared_ptr<nodes::Node3D> create(fs::path filename);
 
         //! Updates model animation and skinning.
-        void update();
+        virtual void update(double elapsed = 0.0) override;
 
         //! Returns the bounding box of the static, not skinned mesh.
         AxisAlignedBox getBoundingBox();
@@ -147,7 +155,6 @@ namespace assimp
         void setupNodes(const aiNode* nd, nodes::Node3DRef parentRef = nodes::Node3DRef());
         MeshRef convertAiMesh(const aiMesh *mesh);
 
-        void calculateDimensions();
         void calculateBoundingBox(vec3 *min, vec3 *max);
         void calculateBoundingBoxForNode(const aiNode *nd, aiVector3D *min, aiVector3D *max, aiMatrix4x4 *trafo);
 
@@ -156,7 +163,8 @@ namespace assimp
         void updateMeshes();
 
         fs::path mFilePath; /// model path
-        const aiScene *mScene;
+        std::shared_ptr<Assimp::Importer> mAiImporter;
+        const aiScene *mAiScene;
 
         AxisAlignedBox mBoundingBox;
 

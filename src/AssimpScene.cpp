@@ -259,19 +259,19 @@ namespace assimp
             aiProcess_OptimizeMeshes
             ;
 
-        Assimp::Importer importer;
-        importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
-        importer.SetPropertyInteger(AI_CONFIG_PP_PTV_NORMALIZE, true);
+        scenePtr->mAiImporter = make_shared<Assimp::Importer>();
+        scenePtr->mAiImporter->SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_LINE | aiPrimitiveType_POINT);
+        scenePtr->mAiImporter->SetPropertyInteger(AI_CONFIG_PP_PTV_NORMALIZE, true);
 
-        scenePtr->mScene = importer.ReadFile(filename.string(), flags);
-        if (!scenePtr->mScene)
-            throw ci::Exception(importer.GetErrorString());
+        scenePtr->mAiScene = scenePtr->mAiImporter->ReadFile(filename.string(), flags);
+        if (!scenePtr->mAiScene)
+            throw ci::Exception(scenePtr->mAiImporter->GetErrorString());
 
         scenePtr->mFilePath = filename;
         //scenePtr->setName(filename.filename().string());
 
         scenePtr->setupSceneMeshes();
-        scenePtr->setupNodes(scenePtr->mScene->mRootNode, newScene);
+        scenePtr->setupNodes(scenePtr->mAiScene->mRootNode, newScene);
 
         return newScene;
     }
@@ -282,16 +282,11 @@ namespace assimp
         if (isDirty)
         {
             isDirty = false;
-            calculateDimensions();
+            vec3 aMin, aMax;
+            calculateBoundingBox(&aMin, &aMax);
+            mBoundingBox = AxisAlignedBox(aMin, aMax);
         }
         return mBoundingBox;
-    }
-
-    void Scene::calculateDimensions()
-    {
-        vec3 aMin, aMax;
-        calculateBoundingBox(&aMin, &aMax);
-        mBoundingBox = AxisAlignedBox(aMin, aMax);
     }
 
     void Scene::calculateBoundingBox(vec3 *min, vec3 *max)
@@ -302,7 +297,7 @@ namespace assimp
         aiMin.x = aiMin.y = aiMin.z = 1e10f;
         aiMax.x = aiMax.y = aiMax.z = -1e10f;
 
-        calculateBoundingBoxForNode(mScene->mRootNode, &aiMin, &aiMax, &trafo);
+        calculateBoundingBoxForNode(mAiScene->mRootNode, &aiMin, &aiMax, &trafo);
         *min = fromAssimp(aiMin);
         *max = fromAssimp(aiMax);
     }
@@ -316,7 +311,7 @@ namespace assimp
 
         for (unsigned n = 0; n < nd->mNumMeshes; ++n)
         {
-            const struct aiMesh *mesh = mScene->mMeshes[nd->mMeshes[n]];
+            const aiMesh *mesh = mAiScene->mMeshes[nd->mMeshes[n]];
             for (unsigned t = 0; t < mesh->mNumVertices; ++t)
             {
                 aiVector3D tmp = mesh->mVertices[t];
@@ -341,7 +336,7 @@ namespace assimp
 
     void Scene::setupNodes(const aiNode *nd, nodes::Node3DRef parentRef)
     {
-        MeshNodeRef nodeRef = MeshNodeRef(new MeshNode());
+        MeshNodeRef nodeRef = make_shared<MeshNode>();
         if (parentRef) parentRef->addChild(nodeRef);
 
         string nodeName = fromAssimp(nd->mName);
@@ -383,7 +378,7 @@ namespace assimp
         meshRef->mName = fromAssimp(mesh->mName);
 
         // Handle material info
-        aiMaterial *mtl = mScene->mMaterials[mesh->mMaterialIndex];
+        aiMaterial *mtl = mAiScene->mMaterials[mesh->mMaterialIndex];
 
         aiString name;
         mtl->Get(AI_MATKEY_NAME, name);
@@ -547,11 +542,11 @@ namespace assimp
     {
         CI_LOG_I("loading model " << mFilePath.filename().string() <<
             " [" << mFilePath.string() << "] ");
-        for (unsigned i = 0; i < mScene->mNumMeshes; ++i)
+        for (unsigned i = 0; i < mAiScene->mNumMeshes; ++i)
         {
-            string name = fromAssimp(mScene->mMeshes[i]->mName);
+            string name = fromAssimp(mAiScene->mMeshes[i]->mName);
             CI_LOG_I("loading mesh " << i << ": " << name);
-            MeshRef meshRef = convertAiMesh(mScene->mMeshes[i]);
+            MeshRef meshRef = convertAiMesh(mAiScene->mMeshes[i]);
             mSceneMeshes.push_back(meshRef);
         }
 
@@ -565,10 +560,10 @@ namespace assimp
 
     void Scene::updateAnimation(size_t animationIndex, double currentTime)
     {
-        if (mScene->mNumAnimations == 0)
+        if (mAiScene->mNumAnimations == 0)
             return;
 
-        const aiAnimation *mAnim = mScene->mAnimations[animationIndex];
+        const aiAnimation *mAnim = mAiScene->mAnimations[animationIndex];
         double ticks = mAnim->mTicksPerSecond;
         if (ticks == 0.0)
             ticks = 1.0;
@@ -673,9 +668,10 @@ namespace assimp
         else
             return MeshNodeRef();
     }
+
     size_t Scene::getNumAnimations() const
     {
-        return mScene->mNumAnimations;
+        return mAiScene->mNumAnimations;
     }
 
     void Scene::setAnimation(size_t n)
@@ -690,7 +686,10 @@ namespace assimp
 
     double Scene::getAnimationDuration(size_t n) const
     {
-        const aiAnimation *anim = mScene->mAnimations[n];
+        if (mAiScene->mNumAnimations == 0)
+            return 0;
+
+        const aiAnimation *anim = mAiScene->mAnimations[n];
         double ticks = anim->mTicksPerSecond;
         if (ticks == 0.0)
             ticks = 1.0;
@@ -826,7 +825,7 @@ namespace assimp
         }
     }
 
-    void Scene::update()
+    void Scene::update(double elapsed)
     {
         if (mAnimationEnabled)
             updateAnimation(mAnimationIndex, mAnimationTime);
