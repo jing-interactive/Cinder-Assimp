@@ -867,9 +867,17 @@ namespace assimp
         }
 
         if (blendMode == BlendDefault)
+        {
             gl::enableAlphaBlending();
+        }
         else if (blendMode == BlendAdditive)
+        {
             gl::enableAdditiveBlending();
+        }
+        else
+        {
+            gl::disableAlphaBlending();
+        }
 
         if (mTwoSided)
             gl::disable(GL_CULL_FACE);
