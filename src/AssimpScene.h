@@ -136,7 +136,8 @@ namespace assimp
         //! Enables/disables animation.
         void enableAnimation(bool enable = true) { mAnimationEnabled = enable; }
 
-        std::vector< MeshRef > mSceneMeshes;
+        std::vector< MeshNodeRef > mAllNodes;
+        std::vector< MeshRef > mAllMeshes;
 
         //! Returns the number of animations in the scene.
         size_t getNumAnimations() const;

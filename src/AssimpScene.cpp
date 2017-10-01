@@ -360,7 +360,13 @@ namespace assimp
             //    throw ci::Exception("node " + nodeRef->getName() + " references mesh #" +
             //        toString< unsigned >(meshId) + " from " +
             //        toString< size_t >(mMeshes.size()) + " meshes.");
-            nodeRef->mMeshes.push_back(mSceneMeshes[meshId]);
+            nodeRef->mMeshes.push_back(mAllMeshes[meshId]);
+        }
+
+        // store the node with meshes for rendering
+        if (nd->mNumMeshes > 0)
+        {
+            mAllNodes.push_back(nodeRef);
         }
 
         // process all children
@@ -547,7 +553,7 @@ namespace assimp
             string name = fromAssimp(mAiScene->mMeshes[i]->mName);
             CI_LOG_I("loading mesh " << i << ": " << name);
             MeshRef meshRef = convertAiMesh(mAiScene->mMeshes[i]);
-            mSceneMeshes.push_back(meshRef);
+            mAllMeshes.push_back(meshRef);
         }
 
 #if 0
@@ -698,9 +704,8 @@ namespace assimp
 
     void Scene::updateSkinning()
     {
-        for (const auto& rawNodeRef : mChildren)
+        for (const auto& nodeRef : mAllNodes)
         {
-            MeshNode* nodeRef = (MeshNode*)rawNodeRef.get();
             for (const auto& meshRef : nodeRef->mMeshes)
             {
                 // current mesh we are introspecting
@@ -767,10 +772,8 @@ namespace assimp
 
     void Scene::updateMeshes()
     {
-        for (const auto& rawNodeRef : mChildren)
+        for (const auto& nodeRef : mAllNodes)
         {
-            MeshNode* nodeRef = (MeshNode*)rawNodeRef.get();
-
             for (const auto& meshRef : nodeRef->mMeshes)
             {
                 if (meshRef->mValidCache)
@@ -815,9 +818,8 @@ namespace assimp
 
         mSkinningEnabled = enable;
         // invalidate mesh cache
-        for (const auto& rawNodeRef : mChildren)
+        for (const auto& nodeRef : mAllNodes)
         {
-            MeshNode* nodeRef = (MeshNode*)rawNodeRef.get();
             for (const auto& meshRef : nodeRef->mMeshes)
             {
                 meshRef->mValidCache = false;
@@ -888,7 +890,7 @@ namespace assimp
 
     void Scene::updateShaderDef(ShaderDefine& shaderDef)
     {
-        for (auto& meshRef : mSceneMeshes)
+        for (auto& meshRef : mAllMeshes)
         {
             if (meshRef->mTextures[aiTextureType_DIFFUSE]) shaderDef.HAS_BASECOLORMAP = true;
             if (meshRef->mTextures[aiTextureType_NORMALS]) shaderDef.HAS_NORMALMAP = true;
