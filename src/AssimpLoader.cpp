@@ -395,9 +395,11 @@ namespace ai {
 	
 } //end namespace ai
 
-AssimpLoader::AssimpLoader( const ci::DataSourceRef& dataSource, const Settings& settings )
-: mRootAssetFolderPath( settings.mRootAssetFolderPath )
-, mSurfacePool( settings.mSurfacePool )
+AssimpLoader::AssimpLoader(const ci::DataSourceRef& dataSource, const Settings& settings)
+    : mRootAssetFolderPath(settings.mRootAssetFolderPath)
+    , mSurfacePool(settings.mSurfacePool)
+    , mHasAnimations(false)
+    , mHasSkeleton(false)
 {
 	// Assimp importer instance which cannot be destroyed until the scene loading is complete.
 	std::unique_ptr<Assimp::Importer> importer( new Assimp::Importer() );
@@ -448,6 +450,8 @@ void AssimpLoader::loadScene( const aiScene* aiscene )
 		mRootNode = ai::generateNodeHierarchy( &mBones, root, boneNames );
 		if( aiscene->HasAnimations() ) {
 			ai::generateAnimationCurves( mBones, aiscene );
+            mHasAnimations = true;
+            mHasSkeleton = true;
 		}
 	}
 	

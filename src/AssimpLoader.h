@@ -82,6 +82,9 @@ namespace model {
 		explicit AssimpLoader( const ci::DataSourceRef& modelSource, const Settings& settings = Settings()  );
 				
 		const std::shared_ptr<SurfacePool>&			getSurfacePool() { return mSurfacePool; }
+
+        bool hasAnimations() const { return mHasAnimations; }
+
 	protected:
 		const aiScene*		loadAiScene( const ci::DataSourceRef& dataSource, Assimp::Importer* importer, unsigned int flags );
 		void				loadScene( const aiScene* aiScene );

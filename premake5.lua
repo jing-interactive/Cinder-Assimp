@@ -92,8 +92,8 @@ solution "cinder-assimp"
         }
         
         files {
-            "include/*",
-            "src/*",
+            "include/**",
+            "src/**",
         }
 
     project "assimp"
