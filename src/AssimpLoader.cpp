@@ -1,12 +1,12 @@
 #include "AssimpLoader.h"
 #include "Skeleton.h"
-#include "Debug.h"
 
 #include "SurfacePool.h"
 
 #include "assimp/postprocess.h"
 #include "cinder/ImageIo.h"
 #include "cinder/app/App.h"
+#include "cinder/Log.h"
 
 #include <boost/algorithm/string.hpp>
 #include <assert.h> 
@@ -202,18 +202,18 @@ namespace ai {
 		aiMaterial *mtl = aiscene->mMaterials[ aimesh->mMaterialIndex ];
 		
 		//for( uint i=0; i<mtl->mNumProperties; ++i ) {
-		//	ci::app::console() << ai::get( mtl->mProperties[i]->mKey ) << std::endl;
+		//	ci::app::console() << ai::get( mtl->mProperties[i]->mKey );
 		//}
 		
 		aiString name;
 		mtl->Get( AI_MATKEY_NAME, name );
-		LOG_M << "material " << ai::get( name ) << std::endl;
+		CI_LOG_I("material " << ai::get( name ));
 		// Culling
 		int twoSided;
 		if ( ( AI_SUCCESS == mtl->Get( AI_MATKEY_TWOSIDED, twoSided ) ) && twoSided ) {
 			matSource.mTwoSided = true;
 			matSource.mMaterial.setFace( GL_FRONT_AND_BACK );
-			LOG_M << " two sided" << std::endl;
+			CI_LOG_I(" two sided");
 		} else {
 			matSource.mTwoSided = false;
 			matSource.mMaterial.setFace( GL_FRONT );
@@ -250,7 +250,7 @@ namespace ai {
 				} else {
 					texturePath = rootPath / ci::fs::path( textureFileName.data );
 				}
-				LOG_M << " [" << texturePath.string() << "] of texture type: " << textureType << std::endl;
+				CI_LOG_I(" [" << texturePath.string() << "] of texture type: " << textureType);
 				
 				if( ci::fs::exists( texturePath ) ) {
 					loadSurface( texturePath, mtl, textureType, surfacePool, &matSource );
@@ -348,7 +348,7 @@ namespace ai {
 				if( bone ) {
 					float tsecs = ( anim->mTicksPerSecond != 0 ) ? (float) anim->mTicksPerSecond : 25.0f;
 					bone->addAnimTrack( a, float( anim->mDuration ), tsecs );
-					LOG_M << " Duration: " << anim->mDuration << " seconds:" << tsecs << std::endl;
+					CI_LOG_I(" Duration: " << anim->mDuration << " seconds:" << tsecs);
 					for( unsigned int k=0; k < nodeAnim->mNumPositionKeys; ++k) {
 						const aiVectorKey& key = nodeAnim->mPositionKeys[k];
 						bone->addPositionKeyframe( a, (float) key.mTime, ai::get( key.mValue ) );
@@ -362,7 +362,7 @@ namespace ai {
 						bone->addScalingKeyframe( a, (float) key.mTime, ai::get( key.mValue ) );
 					}
 				} else {
-					LOG_M << "Anim node " << ai::get(nodeAnim->mNodeName) << " is not a bone." << std::endl;
+					CI_LOG_I("Anim node " << ai::get(nodeAnim->mNodeName) << " is not a bone.");
 				}
 			}
 		}
@@ -436,7 +436,7 @@ const aiScene * AssimpLoader::loadAiScene( const ci::DataSourceRef& dataSource, 
 void AssimpLoader::loadScene( const aiScene* aiscene )
 {
 	if( !aiscene->HasMeshes() )
-		LOG_E << "Scene has no meshes.";
+		CI_LOG_E("Scene has no meshes.");
 	
 	if( !mSurfacePool ) {
 		mSurfacePool = SurfacePoolRef( new SurfacePool );

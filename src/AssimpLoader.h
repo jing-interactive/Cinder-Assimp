@@ -85,6 +85,8 @@ namespace model {
 
         bool hasAnimations() const { return mHasAnimations; }
 
+        ci::fs::path getModelPath() const { return mModelPath; }
+
 	protected:
 		const aiScene*		loadAiScene( const ci::DataSourceRef& dataSource, Assimp::Importer* importer, unsigned int flags );
 		void				loadScene( const aiScene* aiScene );
