@@ -194,6 +194,50 @@ inline void LazyDict<T>::DetachFromDocument()
 }
 
 template<class T>
+unsigned int LazyDict<T>::Remove(const char* id)
+{
+    id = T::TranslateId(mAsset, id);
+
+    typename IdDict::iterator it = mObjsById.find(id);
+
+    if (it == mObjsById.end()) {
+        throw DeadlyExportError("GLTF: Object with id \"" + std::string(id) + "\" is not found");
+    }
+
+    const unsigned int index = it->second;
+
+    mAsset.mUsedIds[id] = false;
+    mObjsById.erase(id);
+    mObjsByOIndex.erase(index);
+    mObjs.erase(mObjs.begin() + index);
+
+    //update index of object in mObjs;
+    for (size_t i = index; i < mObjs.size(); ++i) {
+        T *obj = mObjs[i];
+
+        obj->index = i;
+    }
+
+    for (IdDict::iterator it = mObjsById.begin(); it != mObjsById.end(); ++it) {
+        if (it->second <= index) {
+            continue;
+        }
+
+        mObjsById[it->first] = it->second - 1;
+    }
+
+    for (Dict::iterator it = mObjsByOIndex.begin(); it != mObjsByOIndex.end(); ++it) {
+        if (it->second <= index) {
+            continue;
+        }
+
+        mObjsByOIndex[it->first] = it->second - 1;
+    }
+
+    return index;
+}
+
+template<class T>
 Ref<T> LazyDict<T>::Retrieve(unsigned int i)
 {
 
@@ -288,7 +332,7 @@ inline Buffer::~Buffer()
 	for(SEncodedRegion* reg : EncodedRegion_List) delete reg;
 }
 
-inline const char* Buffer::TranslateId(Asset& r, const char* id)
+inline const char* Buffer::TranslateId(Asset& /*r*/, const char* id)
 {
     return id;
 }
@@ -313,7 +357,7 @@ inline void Buffer::Read(Value& obj, Asset& r)
         if (dataURI.base64) {
             uint8_t* data = 0;
             this->byteLength = Util::DecodeBase64(dataURI.data, dataURI.dataLength, data);
-            this->mData.reset(data);
+            this->mData.reset(data, std::default_delete<uint8_t[]>());
 
             if (statedLength > 0 && this->byteLength != statedLength) {
                 throw DeadlyImportError("GLTF: buffer \"" + id + "\", expected " + to_string(statedLength) +
@@ -326,7 +370,7 @@ inline void Buffer::Read(Value& obj, Asset& r)
                                         " bytes, but found " + to_string(dataURI.dataLength));
             }
 
-            this->mData.reset(new uint8_t[dataURI.dataLength]);
+            this->mData.reset(new uint8_t[dataURI.dataLength], std::default_delete<uint8_t[]>());
             memcpy( this->mData.get(), dataURI.data, dataURI.dataLength );
         }
     }
@@ -357,7 +401,7 @@ inline bool Buffer::LoadFromStream(IOStream& stream, size_t length, size_t baseO
         stream.Seek(baseOffset, aiOrigin_SET);
     }
 
-    mData.reset(new uint8_t[byteLength]);
+    mData.reset(new uint8_t[byteLength], std::default_delete<uint8_t[]>());
 
     if (stream.Read(mData.get(), byteLength, 1) != 1) {
         return false;
@@ -432,7 +476,7 @@ uint8_t* new_data;
 	// Copy data which place after replacing part.
 	memcpy(&new_data[pBufferData_Offset + pReplace_Count], &mData.get()[pBufferData_Offset + pBufferData_Count], pBufferData_Offset);
 	// Apply new data
-	mData.reset(new_data);
+	mData.reset(new_data, std::default_delete<uint8_t[]>());
 	byteLength = new_data_size;
 
 	return true;
@@ -451,7 +495,7 @@ inline void Buffer::Grow(size_t amount)
     if (amount <= 0) return;
     uint8_t* b = new uint8_t[byteLength + amount];
     if (mData) memcpy(b, mData.get(), byteLength);
-    mData.reset(b);
+    mData.reset(b, std::default_delete<uint8_t[]>());
     byteLength += amount;
 }
 
@@ -560,7 +604,7 @@ bool Accessor::ExtractData(T*& outData)
     const size_t stride = byteStride ? byteStride : elemSize;
 
     const size_t targetElemSize = sizeof(T);
-    //ai_assert(elemSize <= targetElemSize);
+    ai_assert(elemSize <= targetElemSize);
 
     ai_assert(count*stride <= bufferView->byteLength);
 
@@ -570,7 +614,7 @@ bool Accessor::ExtractData(T*& outData)
     }
     else {
         for (size_t i = 0; i < count; ++i) {
-            memcpy(outData + i, data + i*stride, targetElemSize);
+            memcpy(outData + i, data + i*stride, elemSize);
         }
     }
 
@@ -623,7 +667,7 @@ inline Image::Image()
 
 }
 
-inline void Image::Read(Value& obj, Asset& r)
+inline void Image::Read(Value& obj, Asset& /*r*/)
 {
     if (!mDataLength) {
         if (Value* uri = FindString(obj, "uri")) {
@@ -668,7 +712,7 @@ inline void Image::SetData(uint8_t* data, size_t length, Asset& r)
     }
 }
 
-inline void Sampler::Read(Value& obj, Asset& r)
+inline void Sampler::Read(Value& obj, Asset& /*r*/)
 {
     SetDefaults();
 
@@ -724,7 +768,7 @@ namespace {
             SetTextureProperties(r, prop, out);
 
             if (Value* scale = FindNumber(*prop, "scale")) {
-                out.scale = scale->GetDouble();
+                out.scale = static_cast<float>(scale->GetDouble());
             }
         }
     }
@@ -735,7 +779,7 @@ namespace {
             SetTextureProperties(r, prop, out);
 
             if (Value* strength = FindNumber(*prop, "strength")) {
-                out.strength = strength->GetDouble();
+                out.strength = static_cast<float>(strength->GetDouble());
             }
         }
     }
@@ -823,9 +867,6 @@ namespace {
         else if ((pos = Compare(attr, "NORMAL"))) {
             v = &(p.attributes.normal);
         }
-        else if ((pos = Compare(attr, "TANGENT"))) {
-            v = &(p.attributes.tangent);
-        }
         else if ((pos = Compare(attr, "TEXCOORD"))) {
             v = &(p.attributes.texcoord);
         }
@@ -889,7 +930,7 @@ inline void Mesh::Read(Value& pJSON_Object, Asset& pAsset_Root)
     }
 }
 
-inline void Camera::Read(Value& obj, Asset& r)
+inline void Camera::Read(Value& obj, Asset& /*r*/)
 {
     type = MemberOrDefault(obj, "type", Camera::Perspective);
 
@@ -937,9 +978,13 @@ inline void Node::Read(Value& obj, Asset& r)
     }
 
     if (Value* mesh = FindUInt(obj, "mesh")) {
+        unsigned numMeshes = 1;
+
+        this->meshes.reserve(numMeshes);
+
         Ref<Mesh> meshRef = r.meshes.Retrieve((*mesh).GetUint());
 
-        if (meshRef) this->mesh = meshRef;
+        if (meshRef) this->meshes.push_back(meshRef);
     }
 
     if (Value* camera = FindUInt(obj, "camera")) {
@@ -1051,13 +1096,13 @@ inline void Asset::Load(const std::string& pFile)
 
     // Read the "scene" property, which specifies which scene to load
     // and recursively load everything referenced by it
-    Value* scene = FindUInt(doc, "scene");
-    unsigned int sceneIndex = 0;
-    if (scene) {
-        sceneIndex = scene->GetUint();
+    if (Value* scene = FindUInt(doc, "scene")) {
+        unsigned int sceneIndex = scene->GetUint();
+
+        Ref<Scene> s = scenes.Retrieve(sceneIndex);
+
+        this->scene = s;
     }
-    Ref<Scene> s = scenes.Retrieve(sceneIndex);
-    this->scene = s;
 
     // Clean up
     for (size_t i = 0; i < mDicts.size(); ++i) {
@@ -1086,7 +1131,7 @@ inline void Asset::ReadExtensionsUsed(Document& doc)
     #undef CHECK_EXT
 }
 
-inline IOStream* Asset::OpenFile(std::string path, const char* mode, bool absolute)
+inline IOStream* Asset::OpenFile(std::string path, const char* mode, bool /*absolute*/)
 {
     #ifdef ASSIMP_API
         return mIOSystem->Open(path, mode);
@@ -1117,11 +1162,12 @@ inline std::string Asset::FindUniqueID(const std::string& str, const char* suffi
     if (it == mUsedIds.end())
         return id;
 
-    char buffer[256];
-    int offset = ai_snprintf(buffer, sizeof(buffer), "%s_", id.c_str());
+    std::vector<char> buffer;
+    buffer.resize(id.size() + 16);
+    int offset = ai_snprintf(buffer.data(), buffer.size(), "%s_", id.c_str());
     for (int i = 0; it != mUsedIds.end(); ++i) {
-        ai_snprintf(buffer + offset, sizeof(buffer) - offset, "%d", i);
-        id = buffer;
+        ai_snprintf(buffer.data() + offset, buffer.size() - offset, "%d", i);
+        id = buffer.data();
         it = mUsedIds.find(id);
     }
 

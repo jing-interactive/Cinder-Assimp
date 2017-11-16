@@ -232,7 +232,9 @@ namespace glTF
             case ComponentType_UNSIGNED_BYTE:
                 return 1;
             default:
-                throw DeadlyImportError("GLTF: Unsupported Component Type "+t);
+                std::string err = "GLTF: Unsupported Component Type ";
+                err += t;
+                throw DeadlyImportError(err);
         }
     }
 
@@ -391,7 +393,7 @@ namespace glTF
         virtual ~Object() {}
 
         //! Maps special IDs to another ID, where needed. Subclasses may override it (statically)
-        static const char* TranslateId(Asset& r, const char* id)
+        static const char* TranslateId(Asset& /*r*/, const char* id)
             { return id; }
     };
 

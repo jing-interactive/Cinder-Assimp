@@ -83,6 +83,7 @@ void ExportSceneCollada(const char*,IOSystem*, const aiScene*, const ExportPrope
 void ExportSceneXFile(const char*,IOSystem*, const aiScene*, const ExportProperties*);
 void ExportSceneStep(const char*,IOSystem*, const aiScene*, const ExportProperties*);
 void ExportSceneObj(const char*,IOSystem*, const aiScene*, const ExportProperties*);
+void ExportSceneObjNoMtl(const char*,IOSystem*, const aiScene*, const ExportProperties*);
 void ExportSceneSTL(const char*,IOSystem*, const aiScene*, const ExportProperties*);
 void ExportSceneSTLBinary(const char*,IOSystem*, const aiScene*, const ExportProperties*);
 void ExportScenePly(const char*,IOSystem*, const aiScene*, const ExportProperties*);
@@ -115,6 +116,8 @@ Exporter::ExportFormatEntry gExporters[] =
 #ifndef ASSIMP_BUILD_NO_OBJ_EXPORTER
     Exporter::ExportFormatEntry( "obj", "Wavefront OBJ format", "obj", &ExportSceneObj,
         aiProcess_GenSmoothNormals /*| aiProcess_PreTransformVertices */),
+    Exporter::ExportFormatEntry( "objnomtl", "Wavefront OBJ format without material file", "obj", &ExportSceneObjNoMtl,
+        aiProcess_GenSmoothNormals /*| aiProcess_PreTransformVertices */),
 #endif
 
 #ifndef ASSIMP_BUILD_NO_STL_EXPORTER
@@ -145,7 +148,7 @@ Exporter::ExportFormatEntry gExporters[] =
         aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_SortByPType),
     Exporter::ExportFormatEntry( "glb", "GL Transmission Format (binary)", "glb", &ExportSceneGLB,
         aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_SortByPType),
-    Exporter::ExportFormatEntry( "gltf2", "GL Transmission Format v. 2", "gltf", &ExportSceneGLTF2,
+    Exporter::ExportFormatEntry( "gltf2", "GL Transmission Format v. 2", "gltf2", &ExportSceneGLTF2,
         aiProcess_JoinIdenticalVertices | aiProcess_Triangulate | aiProcess_SortByPType),
 #endif
 
@@ -241,7 +244,7 @@ bool Exporter::IsDefaultIOHandler() const {
 
 // ------------------------------------------------------------------------------------------------
 const aiExportDataBlob* Exporter::ExportToBlob( const aiScene* pScene, const char* pFormatId,
-                                                unsigned int, const ExportProperties* pProperties ) {
+                                                unsigned int, const ExportProperties* /*pProperties*/ ) {
     if (pimpl->blob) {
         delete pimpl->blob;
         pimpl->blob = NULL;
