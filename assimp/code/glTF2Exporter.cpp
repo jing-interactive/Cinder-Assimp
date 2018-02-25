@@ -56,7 +56,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <assimp/material.h>
 #include <assimp/scene.h>
 
-// Header files, standart library.
+// Header files, standard library.
 #include <memory>
 #include <inttypes.h>
 
@@ -80,7 +80,7 @@ namespace Assimp {
 } // end of namespace Assimp
 
 glTF2Exporter::glTF2Exporter(const char* filename, IOSystem* pIOSystem, const aiScene* pScene,
-                           const ExportProperties* pProperties, bool isBinary)
+                           const ExportProperties* pProperties, bool /*isBinary*/)
     : mFilename(filename)
     , mIOSystem(pIOSystem)
     , mProperties(pProperties)
@@ -110,6 +110,7 @@ glTF2Exporter::glTF2Exporter(const char* filename, IOSystem* pIOSystem, const ai
     }
 
     ExportMeshes();
+    MergeMeshes();
 
     ExportScene();
 
@@ -371,20 +372,28 @@ void glTF2Exporter::GetMatTex(const aiMaterial* mat, OcclusionTextureInfo& prop,
     }
 }
 
-void glTF2Exporter::GetMatColor(const aiMaterial* mat, vec4& prop, const char* propName, int type, int idx)
+aiReturn glTF2Exporter::GetMatColor(const aiMaterial* mat, vec4& prop, const char* propName, int type, int idx)
 {
     aiColor4D col;
-    if (mat->Get(propName, type, idx, col) == AI_SUCCESS) {
+    aiReturn result = mat->Get(propName, type, idx, col);
+
+    if (result == AI_SUCCESS) {
         prop[0] = col.r; prop[1] = col.g; prop[2] = col.b; prop[3] = col.a;
     }
+
+    return result;
 }
 
-void glTF2Exporter::GetMatColor(const aiMaterial* mat, vec3& prop, const char* propName, int type, int idx)
+aiReturn glTF2Exporter::GetMatColor(const aiMaterial* mat, vec3& prop, const char* propName, int type, int idx)
 {
     aiColor3D col;
-    if (mat->Get(propName, type, idx, col) == AI_SUCCESS) {
+    aiReturn result = mat->Get(propName, type, idx, col);
+
+    if (result == AI_SUCCESS) {
         prop[0] = col.r; prop[1] = col.g; prop[2] = col.b;
     }
+
+    return result;
 }
 
 void glTF2Exporter::ExportMaterials()
@@ -405,16 +414,49 @@ void glTF2Exporter::ExportMaterials()
 
         m->name = name;
 
-        GetMatTex(mat, m->pbrMetallicRoughness.baseColorTexture, aiTextureType_DIFFUSE);
+        GetMatTex(mat, m->pbrMetallicRoughness.baseColorTexture, AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_BASE_COLOR_TEXTURE);
+
+        if (!m->pbrMetallicRoughness.baseColorTexture.texture) {
+            //if there wasn't a baseColorTexture defined in the source, fallback to any diffuse texture
+            GetMatTex(mat, m->pbrMetallicRoughness.baseColorTexture, aiTextureType_DIFFUSE);
+        }
+
         GetMatTex(mat, m->pbrMetallicRoughness.metallicRoughnessTexture, AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLICROUGHNESS_TEXTURE);
-        GetMatColor(mat, m->pbrMetallicRoughness.baseColorFactor, AI_MATKEY_COLOR_DIFFUSE);
+
+        if (GetMatColor(mat, m->pbrMetallicRoughness.baseColorFactor, AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_BASE_COLOR_FACTOR) != AI_SUCCESS) {
+            // if baseColorFactor wasn't defined, then the source is likely not a metallic roughness material.
+            //a fallback to any diffuse color should be used instead
+            GetMatColor(mat, m->pbrMetallicRoughness.baseColorFactor, AI_MATKEY_COLOR_DIFFUSE);
+        }
 
         if (mat->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_METALLIC_FACTOR, m->pbrMetallicRoughness.metallicFactor) != AI_SUCCESS) {
             //if metallicFactor wasn't defined, then the source is likely not a PBR file, and the metallicFactor should be 0
             m->pbrMetallicRoughness.metallicFactor = 0;
         }
 
-        mat->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_ROUGHNESS_FACTOR, m->pbrMetallicRoughness.roughnessFactor);
+        // get roughness if source is gltf2 file
+        if (mat->Get(AI_MATKEY_GLTF_PBRMETALLICROUGHNESS_ROUGHNESS_FACTOR, m->pbrMetallicRoughness.roughnessFactor) != AI_SUCCESS) {
+            // otherwise, try to derive and convert from specular + shininess values
+            aiColor4D specularColor;
+            ai_real shininess;
+
+            if (
+                mat->Get(AI_MATKEY_COLOR_SPECULAR, specularColor) == AI_SUCCESS &&
+                mat->Get(AI_MATKEY_SHININESS, shininess) == AI_SUCCESS
+            ) {
+                // convert specular color to luminance
+                float specularIntensity = specularColor[0] * 0.2125 + specularColor[1] * 0.7154 + specularColor[2] * 0.0721;
+                //normalize shininess (assuming max is 1000) with an inverse exponentional curve
+                float normalizedShininess = std::sqrt(shininess / 1000);
+
+                //clamp the shininess value between 0 and 1
+                normalizedShininess = std::min(std::max(normalizedShininess, 0.0f), 1.0f);
+                // low specular intensity values should produce a rough material even if shininess is high.
+                normalizedShininess = normalizedShininess * specularIntensity;
+
+                m->pbrMetallicRoughness.roughnessFactor = 1 - normalizedShininess;
+            }
+        }
 
         GetMatTex(mat, m->normalTexture, aiTextureType_NORMALS);
         GetMatTex(mat, m->occlusionTexture, aiTextureType_LIGHTMAP);
@@ -424,25 +466,16 @@ void glTF2Exporter::ExportMaterials()
         mat->Get(AI_MATKEY_TWOSIDED, m->doubleSided);
         mat->Get(AI_MATKEY_GLTF_ALPHACUTOFF, m->alphaCutoff);
 
-        bool foundAlphaMode = false;
-        for (size_t i = 0; i < mat->mNumProperties; ++i) {
-            aiMaterialProperty *prop = mat->mProperties[i];
-            if (prop->mKey != aiString("$mat.gltf.alphaMode"))
-                continue;
+        aiString alphaMode;
 
-            std::string alphaMode;
-            for (size_t c = 0; c < prop->mDataLength; ++c)
-                alphaMode += prop->mData[c];
-            m->alphaMode = alphaMode;
-            foundAlphaMode = true;
-        }
-
-        if (!foundAlphaMode) {
+        if (mat->Get(AI_MATKEY_GLTF_ALPHAMODE, alphaMode) == AI_SUCCESS) {
+            m->alphaMode = alphaMode.C_Str();
+        } else {
             float opacity;
 
             if (mat->Get(AI_MATKEY_OPACITY, opacity) == AI_SUCCESS) {
                 if (opacity < 1) {
-                    m->alphaMode = "MASK";
+                    m->alphaMode = "BLEND";
                     m->pbrMetallicRoughness.baseColorFactor[3] *= opacity;
                 }
             }
@@ -459,11 +492,19 @@ void glTF2Exporter::ExportMaterials()
 
             PbrSpecularGlossiness pbrSG;
 
-            GetMatColor(mat, pbrSG.diffuseFactor, AI_MATKEY_GLTF_PBRSPECULARGLOSSINESS_DIFFUSE_FACTOR);
-            GetMatColor(mat, pbrSG.specularFactor, AI_MATKEY_GLTF_PBRSPECULARGLOSSINESS_SPECULAR_FACTOR);
-            mat->Get(AI_MATKEY_GLTF_PBRSPECULARGLOSSINESS_GLOSSINESS_FACTOR, pbrSG.glossinessFactor);
-            GetMatTex(mat, pbrSG.diffuseTexture, AI_MATKEY_GLTF_PBRSPECULARGLOSSINESS_DIFFUSE_TEXTURE);
-            GetMatTex(mat, pbrSG.specularGlossinessTexture, AI_MATKEY_GLTF_PBRSPECULARGLOSSINESS_SPECULARGLOSSINESS_TEXTURE);
+            GetMatColor(mat, pbrSG.diffuseFactor, AI_MATKEY_COLOR_DIFFUSE);
+            GetMatColor(mat, pbrSG.specularFactor, AI_MATKEY_COLOR_SPECULAR);
+
+            if (mat->Get(AI_MATKEY_GLTF_PBRSPECULARGLOSSINESS_GLOSSINESS_FACTOR, pbrSG.glossinessFactor) != AI_SUCCESS) {
+                float shininess;
+
+                if (mat->Get(AI_MATKEY_SHININESS, shininess)) {
+                    pbrSG.glossinessFactor = shininess / 1000;
+                }
+            }
+
+            GetMatTex(mat, pbrSG.diffuseTexture, aiTextureType_DIFFUSE);
+            GetMatTex(mat, pbrSG.specularGlossinessTexture, aiTextureType_SPECULAR);
 
             m->pbrSpecularGlossiness = Nullable<PbrSpecularGlossiness>(pbrSG);
         }
@@ -476,10 +517,11 @@ void glTF2Exporter::ExportMaterials()
  */
 bool FindMeshNode(Ref<Node>& nodeIn, Ref<Node>& meshNode, std::string meshID)
 {
-
-    if (nodeIn->mesh && meshID.compare(nodeIn->mesh->id) == 0) {
-        meshNode = nodeIn;
-        return true;
+    for (unsigned int i = 0; i < nodeIn->meshes.size(); ++i) {
+        if (meshID.compare(nodeIn->meshes[i]->id) == 0) {
+            meshNode = nodeIn;
+            return true;
+        }
     }
 
     for (unsigned int i = 0; i < nodeIn->children.size(); ++i) {
@@ -541,7 +583,7 @@ void ExportSkin(Asset& mAsset, const aiMesh* aimesh, Ref<Mesh>& meshRef, Ref<Buf
         Ref<Node> nodeRef = mAsset.nodes.Get(aib->mName.C_Str());
         nodeRef->jointName = nodeRef->name;
 
-        unsigned int jointNamesIndex;
+        unsigned int jointNamesIndex = 0;
         bool addJointToJointNames = true;
         for ( unsigned int idx_joint = 0; idx_joint < skinRef->jointNames.size(); ++idx_joint) {
             if (skinRef->jointNames[idx_joint]->jointName.compare(nodeRef->jointName) == 0) {
@@ -570,7 +612,7 @@ void ExportSkin(Asset& mAsset, const aiMesh* aimesh, Ref<Mesh>& meshRef, Ref<Buf
                 continue;
             }
 
-            vertexJointData[vertexId][jointsPerVertex[vertexId]] = jointNamesIndex;
+            vertexJointData[vertexId][jointsPerVertex[vertexId]] = static_cast<float>(jointNamesIndex);
             vertexWeightData[vertexId][jointsPerVertex[vertexId]] = vertWeight;
 
             jointsPerVertex[vertexId] += 1;
@@ -742,6 +784,57 @@ void glTF2Exporter::ExportMeshes()
     }
 }
 
+//merges a node's multiple meshes (with one primitive each) into one mesh with multiple primitives
+void glTF2Exporter::MergeMeshes()
+{
+    for (unsigned int n = 0; n < mAsset->nodes.Size(); ++n) {
+        Ref<Node> node = mAsset->nodes.Get(n);
+
+        unsigned int nMeshes = static_cast<unsigned int>(node->meshes.size());
+
+        //skip if it's 1 or less meshes per node
+        if (nMeshes > 1) {
+            Ref<Mesh> firstMesh = node->meshes.at(0);
+
+            //loop backwards to allow easy removal of a mesh from a node once it's merged
+            for (unsigned int m = nMeshes - 1; m >= 1; --m) {
+                Ref<Mesh> mesh = node->meshes.at(m);
+
+                //append this mesh's primitives to the first mesh's primitives
+                firstMesh->primitives.insert(
+                    firstMesh->primitives.end(),
+                    mesh->primitives.begin(),
+                    mesh->primitives.end()
+                );
+
+                //remove the mesh from the list of meshes
+                unsigned int removedIndex = mAsset->meshes.Remove(mesh->id.c_str());
+
+                //find the presence of the removed mesh in other nodes
+                for (unsigned int nn = 0; nn < mAsset->nodes.Size(); ++nn) {
+                    Ref<Node> node = mAsset->nodes.Get(nn);
+
+                    for (unsigned int mm = 0; mm < node->meshes.size(); ++mm) {
+                        Ref<Mesh>& meshRef = node->meshes.at(mm);
+                        unsigned int meshIndex = meshRef.GetIndex();
+
+                        if (meshIndex == removedIndex) {
+                            node->meshes.erase(node->meshes.begin() + mm);
+                        } else if (meshIndex > removedIndex) {
+                            Ref<Mesh> newMeshRef = mAsset->meshes.Get(meshIndex - 1);
+
+                            meshRef = newMeshRef;
+                        }
+                    }
+                }
+            }
+
+            //since we were looping backwards, reverse the order of merged primitives to their original order
+            std::reverse(firstMesh->primitives.begin() + 1, firstMesh->primitives.end());
+        }
+    }
+}
+
 /*
  * Export the root node of the node hierarchy.
  * Calls ExportNode for all children.
@@ -755,8 +848,8 @@ unsigned int glTF2Exporter::ExportNodeHierarchy(const aiNode* n)
         CopyValue(n->mTransformation, node->matrix.value);
     }
 
-    if (n->mNumMeshes > 0) {
-        node->mesh = mAsset->meshes.Get(n->mMeshes[0]);
+    for (unsigned int i = 0; i < n->mNumMeshes; ++i) {
+        node->meshes.push_back(mAsset->meshes.Get(n->mMeshes[i]));
     }
 
     for (unsigned int i = 0; i < n->mNumChildren; ++i) {
@@ -784,8 +877,8 @@ unsigned int glTF2Exporter::ExportNode(const aiNode* n, Ref<Node>& parent)
         CopyValue(n->mTransformation, node->matrix.value);
     }
 
-    if (n->mNumMeshes > 0) {
-        node->mesh = mAsset->meshes.Get(n->mMeshes[0]);
+    for (unsigned int i = 0; i < n->mNumMeshes; ++i) {
+        node->meshes.push_back(mAsset->meshes.Get(n->mMeshes[i]));
     }
 
     for (unsigned int i = 0; i < n->mNumChildren; ++i) {
@@ -852,7 +945,7 @@ inline void ExtractAnimationData(Asset& mAsset, std::string& animId, Ref<Animati
             size_t frameIndex = i * nodeChannel->mNumPositionKeys / numKeyframes;
             // mTime is measured in ticks, but GLTF time is measured in seconds, so convert.
             // Check if we have to cast type here. e.g. uint16_t()
-            timeData[i] = nodeChannel->mPositionKeys[frameIndex].mTime / ticksPerSecond;
+            timeData[i] = static_cast<float>(nodeChannel->mPositionKeys[frameIndex].mTime / ticksPerSecond);
         }
 
         Ref<Accessor> timeAccessor = ExportData(mAsset, animId, buffer, static_cast<unsigned int>(numKeyframes), &timeData[0], AttribType::SCALAR, AttribType::SCALAR, ComponentType_FLOAT);
@@ -933,7 +1026,7 @@ void glTF2Exporter::ExportAnimations()
             Ref<Animation> animRef = mAsset->animations.Create(name);
 
             // Parameters
-            ExtractAnimationData(*mAsset, name, animRef, bufferRef, nodeChannel, anim->mTicksPerSecond);
+            ExtractAnimationData(*mAsset, name, animRef, bufferRef, nodeChannel, static_cast<float>(anim->mTicksPerSecond));
 
             for (unsigned int j = 0; j < 3; ++j) {
                 std::string channelType;

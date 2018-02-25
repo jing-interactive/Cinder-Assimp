@@ -154,7 +154,7 @@ static void CopyValue(const glTF::mat4& v, aiMatrix4x4& o)
     o.a4 = v[12]; o.b4 = v[13]; o.c4 = v[14]; o.d4 = v[15];
 }
 
-inline void SetMaterialColorProperty(std::vector<int>& embeddedTexIdxs, Asset& r, glTF::TexProperty prop, aiMaterial* mat,
+inline void SetMaterialColorProperty(std::vector<int>& embeddedTexIdxs, Asset& /*r*/, glTF::TexProperty prop, aiMaterial* mat,
     aiTextureType texType, const char* pKey, unsigned int type, unsigned int idx)
 {
     if (prop.texture) {
@@ -174,9 +174,7 @@ inline void SetMaterialColorProperty(std::vector<int>& embeddedTexIdxs, Asset& r
     else {
         aiColor4D col;
         CopyValue(prop.color, col);
-        if (col.r != 1.f || col.g != 1.f || col.b != 1.f || col.a != 1.f) {
-            mat->AddProperty(&col, 1, pKey, type, idx);
-        }
+        mat->AddProperty(&col, 1, pKey, type, idx);
     }
 }
 
@@ -236,6 +234,7 @@ static inline void SetFace(aiFace& face, int a, int b, int c)
     face.mIndices[2] = c;
 }
 
+#ifdef ASSIMP_BUILD_DEBUG
 static inline bool CheckValidFacesIndices(aiFace* faces, unsigned nFaces, unsigned nVerts)
 {
     for (unsigned i = 0; i < nFaces; ++i) {
@@ -247,6 +246,7 @@ static inline bool CheckValidFacesIndices(aiFace* faces, unsigned nFaces, unsign
     }
     return true;
 }
+#endif // ASSIMP_BUILD_DEBUG
 
 void glTFImporter::ImportMeshes(glTF::Asset& r)
 {
@@ -672,7 +672,7 @@ void glTFImporter::InternReadFile(const std::string& pFile, aiScene* pScene, IOS
     //pScene->mFlags |= AI_SCENE_FLAGS_NON_VERBOSE_FORMAT;
 	MakeVerboseFormatProcess process;
     process.Execute(pScene);
-    
+
 
     if (pScene->mNumMeshes == 0) {
         pScene->mFlags |= AI_SCENE_FLAGS_INCOMPLETE;

@@ -4,6 +4,7 @@
 #include "SurfacePool.h"
 
 #include "assimp/postprocess.h"
+#include "../assimp/code/ProcessHelper.h"
 #include "cinder/ImageIo.h"
 #include "cinder/app/App.h"
 #include "cinder/Log.h"
@@ -243,14 +244,14 @@ namespace ai {
 		for( auto& textureType : model::MaterialSource::sTextureTypes ) {
 			aiString textureFileName;
 			// FIXME: We're only loading the first texture of each type (index 0)
-			if ( AI_SUCCESS == mtl->GetTexture( static_cast<aiTextureType>(textureType), 0, &textureFileName ) ) {
+			if ( AI_SUCCESS == mtl->GetTexture( (aiTextureType)textureType, 0, &textureFileName ) ) {
 				ci::fs::path texturePath;
 				if( rootPath.empty() ) {
 					texturePath = modelPath.parent_path() / ci::fs::path( textureFileName.data );
 				} else {
 					texturePath = rootPath / ci::fs::path( textureFileName.data );
 				}
-				CI_LOG_I(" [" << texturePath.string() << "] of texture type: " << textureType);
+				CI_LOG_I(" [" << texturePath.string() << "] of texture type: " << Assimp::TextureTypeToString((aiTextureType)textureType));
 				
 				if( ci::fs::exists( texturePath ) ) {
 					loadSurface( texturePath, mtl, textureType, surfacePool, &matSource );

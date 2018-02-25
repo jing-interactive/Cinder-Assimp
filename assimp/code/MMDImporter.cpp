@@ -107,7 +107,7 @@ const aiImporterDesc *MMDImporter::GetInfo() const { return &desc; }
 // ------------------------------------------------------------------------------------------------
 //  MMD import implementation
 void MMDImporter::InternReadFile(const std::string &file, aiScene *pScene,
-                                 IOSystem *pIOHandler) {
+                                 IOSystem */*pIOHandler*/) {
   // Read file by istream
   std::filebuf fb;
   if (!fb.open(file, std::ios::in | std::ios::binary)) {
@@ -118,7 +118,7 @@ void MMDImporter::InternReadFile(const std::string &file, aiScene *pScene,
 
   // Get the file-size and validate it, throwing an exception when fails
   fileStream.seekg(0, fileStream.end);
-  size_t fileSize = fileStream.tellg();
+  size_t fileSize = static_cast<size_t>(fileStream.tellg());
   fileStream.seekg(0, fileStream.beg);
 
   if (fileSize < sizeof(pmx::PmxModel)) {

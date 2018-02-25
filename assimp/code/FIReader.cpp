@@ -168,7 +168,7 @@ struct FIBase64ValueImpl: public FIBase64Value {
         if (!strValueValid) {
             strValueValid = true;
             std::ostringstream os;
-            uint8_t c1, c2;
+            uint8_t c1 = 0, c2;
             int imod3 = 0;
             std::vector<uint8_t>::size_type valueSize = value.size();
             for (std::vector<uint8_t>::size_type i = 0; i < valueSize; ++i) {
@@ -1776,17 +1776,17 @@ public:
         return reader->getParserFormat();
     }
 
-    virtual std::shared_ptr<const FIValue> getAttributeEncodedValue(int idx) const /*override*/ {
+    virtual std::shared_ptr<const FIValue> getAttributeEncodedValue(int /*idx*/) const /*override*/ {
         return nullptr;
     }
 
-    virtual std::shared_ptr<const FIValue> getAttributeEncodedValue(const char* name) const /*override*/ {
+    virtual std::shared_ptr<const FIValue> getAttributeEncodedValue(const char* /*name*/) const /*override*/ {
         return nullptr;
     }
 
-    virtual void registerDecoder(const std::string &algorithmUri, std::unique_ptr<FIDecoder> decoder) /*override*/ {}
+    virtual void registerDecoder(const std::string &/*algorithmUri*/, std::unique_ptr<FIDecoder> /*decoder*/) /*override*/ {}
 
-    virtual void registerVocabulary(const std::string &vocabularyUri, const FIVocabulary *vocabulary) /*override*/ {}
+    virtual void registerVocabulary(const std::string &/*vocabularyUri*/, const FIVocabulary */*vocabulary*/) /*override*/ {}
 
 private:
 

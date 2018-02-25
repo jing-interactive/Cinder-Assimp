@@ -72,7 +72,7 @@ namespace glTF2 {
             return val;
         }
 
-        inline Value& MakeValue(Value& val, float r, MemoryPoolAllocator<>& al) {
+        inline Value& MakeValue(Value& val, float r, MemoryPoolAllocator<>& /*al*/) {
             val.SetDouble(r);
 
             return val;
@@ -171,7 +171,7 @@ namespace glTF2 {
         obj.AddMember("target", int(bv.target), w.mAl);
     }
 
-    inline void Write(Value& obj, Camera& c, AssetWriter& w)
+    inline void Write(Value& /*obj*/, Camera& /*c*/, AssetWriter& /*w*/)
     {
 
     }
@@ -417,8 +417,8 @@ namespace glTF2 {
 
         AddRefsVector(obj, "children", n.children, w.mAl);
 
-        if (n.mesh) {
-            obj.AddMember("mesh", n.mesh->index, w.mAl);
+        if (!n.meshes.empty()) {
+            obj.AddMember("mesh", n.meshes[0]->index, w.mAl);
         }
 
         AddRefsVector(obj, "skeletons", n.skeletons, w.mAl);
@@ -432,7 +432,7 @@ namespace glTF2 {
         }
     }
 
-    inline void Write(Value& obj, Program& b, AssetWriter& w)
+    inline void Write(Value& /*obj*/, Program& /*b*/, AssetWriter& /*w*/)
     {
 
     }
@@ -465,7 +465,7 @@ namespace glTF2 {
         AddRefsVector(scene, "nodes", s.nodes, w.mAl);
     }
 
-    inline void Write(Value& obj, Shader& b, AssetWriter& w)
+    inline void Write(Value& /*obj*/, Shader& /*b*/, AssetWriter& /*w*/)
     {
 
     }
