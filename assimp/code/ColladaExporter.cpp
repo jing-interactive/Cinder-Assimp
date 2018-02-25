@@ -2,7 +2,8 @@
 Open Asset Import Library (assimp)
 ----------------------------------------------------------------------
 
-Copyright (c) 2006-2017, assimp team
+Copyright (c) 2006-2018, assimp team
+
 
 All rights reserved.
 
@@ -43,17 +44,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef ASSIMP_BUILD_NO_COLLADA_EXPORTER
 
 #include "ColladaExporter.h"
-#include "Bitmap.h"
-#include "fast_atof.h"
+#include <assimp/Bitmap.h>
+#include <assimp/fast_atof.h>
 #include <assimp/SceneCombiner.h>
-#include "StringUtils.h"
-#include "XMLTools.h"
+#include <assimp/StringUtils.h>
+#include <assimp/XMLTools.h>
 #include <assimp/DefaultIOSystem.h>
 #include <assimp/IOSystem.hpp>
 #include <assimp/Exporter.hpp>
 #include <assimp/scene.h>
 
-#include "Exceptional.h"
+#include <assimp/Exceptional.h>
 
 #include <memory>
 #include <ctime>
@@ -1280,7 +1281,7 @@ void ColladaExporter::WriteAnimationLibrary(size_t pIndex)
 
 			std::vector<ai_real> frames;
 			for( size_t i = 0; i < nodeAnim->mNumPositionKeys; ++i) {
-				frames.push_back(nodeAnim->mPositionKeys[i].mTime);
+				frames.push_back(static_cast<ai_real>(nodeAnim->mPositionKeys[i].mTime));
 			}
 			
 			WriteFloatArray( node_idstr , FloatType_Time, (const ai_real*) frames.data(), frames.size());
@@ -1309,7 +1310,7 @@ void ColladaExporter::WriteAnimationLibrary(size_t pIndex)
 				// Combine the above transformations
 				aiMatrix4x4 mat = TranslationM * RotationM * ScalingM;
 				
-				for( size_t j = 0; j < 4; ++j) {
+				for( unsigned int j = 0; j < 4; ++j) {
 					keyframes.insert(keyframes.end(), mat[j], mat[j] + 4);
                 }
 			}

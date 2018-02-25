@@ -3,7 +3,8 @@
 Open Asset Import Library (assimp)
 ---------------------------------------------------------------------------
 
-Copyright (c) 2006-2017, assimp team
+Copyright (c) 2006-2018, assimp team
+
 
 
 All rights reserved.
@@ -49,7 +50,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // internal headers
 #include "ProcessHelper.h"
 #include "FindDegenerates.h"
-#include "Exceptional.h"
+#include <assimp/Exceptional.h>
 
 using namespace Assimp;
 
@@ -93,7 +94,7 @@ void FindDegeneratesProcess::Execute( aiScene* pScene) {
 
 static ai_real heron( ai_real a, ai_real b, ai_real c ) {
     ai_real s = (a + b + c) / 2;
-    ai_real area = pow((s * ( s - a ) * ( s - b ) * ( s - c ) ), 0.5 );
+    ai_real area = pow((s * ( s - a ) * ( s - b ) * ( s - c ) ), (ai_real)0.5 );
     return area;
 }
 
@@ -102,7 +103,7 @@ static ai_real distance3D( const aiVector3D &vA, aiVector3D &vB ) {
     const ai_real ly = ( vB.y - vA.y );
     const ai_real lz = ( vB.z - vA.z );
     ai_real a = lx*lx + ly*ly + lz*lz;
-    ai_real d = pow( a, 0.5 );
+    ai_real d = pow( a, (ai_real)0.5 );
 
     return d;
 }

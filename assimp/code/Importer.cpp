@@ -3,7 +3,8 @@
 Open Asset Import Library (assimp)
 ---------------------------------------------------------------------------
 
-Copyright (c) 2006-2017, assimp team
+Copyright (c) 2006-2018, assimp team
+
 
 
 All rights reserved.
@@ -64,19 +65,19 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // Internal headers
 // ------------------------------------------------------------------------------------------------
 #include "Importer.h"
-#include "BaseImporter.h"
+#include <assimp/BaseImporter.h>
 #include "BaseProcess.h"
 
 #include "DefaultProgressHandler.h"
-#include "GenericProperty.h"
+#include <assimp/GenericProperty.h>
 #include "ProcessHelper.h"
 #include "ScenePreprocessor.h"
 #include "ScenePrivate.h"
-#include "MemoryIOWrapper.h"
-#include "Profiler.h"
-#include "TinyFormatter.h"
-#include "Exceptional.h"
-#include "Profiler.h"
+#include <assimp/MemoryIOWrapper.h>
+#include <assimp/Profiler.h>
+#include <assimp/TinyFormatter.h>
+#include <assimp/Exceptional.h>
+#include <assimp/Profiler.h>
 #include <set>
 #include <memory>
 #include <cctype>
@@ -189,7 +190,7 @@ Importer::~Importer()
     delete pimpl->mIOHandler;
     delete pimpl->mProgressHandler;
 
-    // Kill imported scene. Destructors should do that recursivly
+    // Kill imported scene. Destructor's should do that recursively
     delete pimpl->mScene;
 
     // Delete shared post-processing data
@@ -197,18 +198,6 @@ Importer::~Importer()
 
     // and finally the pimpl itself
     delete pimpl;
-}
-
-// ------------------------------------------------------------------------------------------------
-// Copy constructor - copies the config of another Importer, not the scene
-Importer::Importer(const Importer &other)
-	: pimpl(NULL) {
-    new(this) Importer();
-
-    pimpl->mIntProperties    = other.pimpl->mIntProperties;
-    pimpl->mFloatProperties  = other.pimpl->mFloatProperties;
-    pimpl->mStringProperties = other.pimpl->mStringProperties;
-    pimpl->mMatrixProperties = other.pimpl->mMatrixProperties;
 }
 
 // ------------------------------------------------------------------------------------------------
@@ -274,10 +263,6 @@ aiReturn Importer::UnregisterLoader(BaseImporter* pImp)
 
     if (it != pimpl->mImporter.end())   {
         pimpl->mImporter.erase(it);
-
-        std::set<std::string> st;
-        pImp->GetExtensionList(st);
-
         DefaultLogger::get()->info("Unregistering custom importer: ");
         return AI_SUCCESS;
     }
@@ -680,6 +665,8 @@ const aiScene* Importer::ReadFile( const char* _pFile, unsigned int pFlags)
         if (profiler) {
             profiler->EndRegion("import");
         }
+
+        SetPropertyString("sourceFilePath", pFile);
 
         // If successful, apply all active post processing steps to the imported data
         if( pimpl->mScene)  {

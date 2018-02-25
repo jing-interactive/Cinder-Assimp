@@ -2,7 +2,8 @@
  Open Asset Import Library (assimp)
  ----------------------------------------------------------------------
 
- Copyright (c) 2006-2017, assimp team
+ Copyright (c) 2006-2018, assimp team
+
 
  All rights reserved.
 
@@ -46,10 +47,10 @@
 #ifndef AI_COLLADAPARSER_H_INC
 #define AI_COLLADAPARSER_H_INC
 
-#include "irrXMLWrapper.h"
+#include <assimp/irrXMLWrapper.h>
 #include "ColladaHelper.h"
 #include <assimp/ai_assert.h>
-#include "TinyFormatter.h"
+#include <assimp/TinyFormatter.h>
 
 namespace Assimp
 {

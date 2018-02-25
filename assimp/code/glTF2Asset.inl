@@ -2,7 +2,8 @@
 Open Asset Import Library (assimp)
 ----------------------------------------------------------------------
 
-Copyright (c) 2006-2017, assimp team
+Copyright (c) 2006-2018, assimp team
+
 
 All rights reserved.
 
@@ -39,7 +40,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ----------------------------------------------------------------------
 */
 
-#include "StringUtils.h"
+#include <assimp/StringUtils.h>
 
 // Header files, Assimp
 #include <assimp/DefaultLogger.hpp>
@@ -212,7 +213,7 @@ unsigned int LazyDict<T>::Remove(const char* id)
     mObjs.erase(mObjs.begin() + index);
 
     //update index of object in mObjs;
-    for (size_t i = index; i < mObjs.size(); ++i) {
+    for (unsigned int i = index; i < mObjs.size(); ++i) {
         T *obj = mObjs[i];
 
         obj->index = i;
@@ -258,11 +259,11 @@ Ref<T> LazyDict<T>::Retrieve(unsigned int i)
     Value &obj = (*mDict)[i];
 
     if (!obj.IsObject()) {
-        throw DeadlyImportError("GLTF: Object at index \"" + std::to_string(i) + "\" is not a JSON object");
+        throw DeadlyImportError("GLTF: Object at index \"" + to_string(i) + "\" is not a JSON object");
     }
 
     T* inst = new T();
-    inst->id = std::string(mDictId) + "_" + std::to_string(i);
+    inst->id = std::string(mDictId) + "_" + to_string(i);
     inst->oIndex = i;
     ReadMember(obj, "name", inst->name);
     inst->Read(obj, mAsset);
@@ -485,7 +486,8 @@ uint8_t* new_data;
 inline size_t Buffer::AppendData(uint8_t* data, size_t length)
 {
     size_t offset = this->byteLength;
-    Grow(length);
+    // Force alignment to 4 bits
+    Grow((length + 3) & ~3);
     memcpy(mData.get() + offset, data, length);
     return offset;
 }
@@ -512,6 +514,7 @@ inline void BufferView::Read(Value& obj, Asset& r)
 
     byteOffset = MemberOrDefault(obj, "byteOffset", 0u);
     byteLength = MemberOrDefault(obj, "byteLength", 0u);
+    byteStride = MemberOrDefault(obj, "byteStride", 0u);
 }
 
 //
@@ -526,7 +529,6 @@ inline void Accessor::Read(Value& obj, Asset& r)
     }
 
     byteOffset = MemberOrDefault(obj, "byteOffset", 0u);
-    byteStride = MemberOrDefault(obj, "byteStride", 0u);
     componentType = MemberOrDefault(obj, "componentType", ComponentType_BYTE);
     count = MemberOrDefault(obj, "count", 0u);
 
@@ -601,7 +603,7 @@ bool Accessor::ExtractData(T*& outData)
     const size_t elemSize = GetElementSize();
     const size_t totalSize = elemSize * count;
 
-    const size_t stride = byteStride ? byteStride : elemSize;
+    const size_t stride = bufferView && bufferView->byteStride ? bufferView->byteStride : elemSize;
 
     const size_t targetElemSize = sizeof(T);
     ai_assert(elemSize <= targetElemSize);
@@ -641,7 +643,7 @@ inline Accessor::Indexer::Indexer(Accessor& acc)
     : accessor(acc)
     , data(acc.GetPointer())
     , elemSize(acc.GetElementSize())
-    , stride(acc.byteStride ? acc.byteStride : elemSize)
+    , stride(acc.bufferView && acc.bufferView->byteStride ? acc.bufferView->byteStride : elemSize)
 {
 
 }
@@ -867,6 +869,9 @@ namespace {
         else if ((pos = Compare(attr, "NORMAL"))) {
             v = &(p.attributes.normal);
         }
+        else if ((pos = Compare(attr, "TANGENT"))) {
+            v = &(p.attributes.tangent);
+        }
         else if ((pos = Compare(attr, "TEXCOORD"))) {
             v = &(p.attributes.texcoord);
         }
@@ -906,7 +911,7 @@ inline void Mesh::Read(Value& pJSON_Object, Asset& pAsset_Root)
                 for (Value::MemberIterator it = attrs->MemberBegin(); it != attrs->MemberEnd(); ++it) {
                     if (!it->value.IsUint()) continue;
                     const char* attr = it->name.GetString();
-                    // Valid attribute semantics include POSITION, NORMAL, TEXCOORD, COLOR, JOINT, JOINTMATRIX,
+                    // Valid attribute semantics include POSITION, NORMAL, TANGENT, TEXCOORD, COLOR, JOINT, JOINTMATRIX,
                     // and WEIGHT.Attribute semantics can be of the form[semantic]_[set_index], e.g., TEXCOORD_0, TEXCOORD_1, etc.
 
                     int undPos = 0;
@@ -934,7 +939,7 @@ inline void Camera::Read(Value& obj, Asset& /*r*/)
 {
     type = MemberOrDefault(obj, "type", Camera::Perspective);
 
-    const char* subobjId = (type == Camera::Orthographic) ? "ortographic" : "perspective";
+    const char* subobjId = (type == Camera::Orthographic) ? "orthographic" : "perspective";
 
     Value* it = FindObject(obj, subobjId);
     if (!it) throw DeadlyImportError("GLTF: Camera missing its parameters");
@@ -1037,7 +1042,72 @@ inline void AssetMetadata::Read(Document& doc)
 // Asset methods implementation
 //
 
-inline void Asset::Load(const std::string& pFile)
+inline void Asset::ReadBinaryHeader(IOStream& stream, std::vector<char>& sceneData)
+{
+    GLB_Header header;
+    if (stream.Read(&header, sizeof(header), 1) != 1) {
+        throw DeadlyImportError("GLTF: Unable to read the file header");
+    }
+
+    if (strncmp((char*)header.magic, AI_GLB_MAGIC_NUMBER, sizeof(header.magic)) != 0) {
+        throw DeadlyImportError("GLTF: Invalid binary glTF file");
+    }
+
+    AI_SWAP4(header.version);
+    asset.version = to_string(header.version);
+    if (header.version != 2) {
+        throw DeadlyImportError("GLTF: Unsupported binary glTF version");
+    }
+
+    GLB_Chunk chunk;
+    if (stream.Read(&chunk, sizeof(chunk), 1) != 1) {
+        throw DeadlyImportError("GLTF: Unable to read JSON chunk");
+    }
+
+    AI_SWAP4(chunk.chunkLength);
+    AI_SWAP4(chunk.chunkType);
+
+    if (chunk.chunkType != ChunkType_JSON) {
+        throw DeadlyImportError("GLTF: JSON chunk missing");
+    }
+
+    // read the scene data
+
+    mSceneLength = chunk.chunkLength;
+    sceneData.resize(mSceneLength + 1);
+    sceneData[mSceneLength] = '\0';
+
+    if (stream.Read(&sceneData[0], 1, mSceneLength) != mSceneLength) {
+        throw DeadlyImportError("GLTF: Could not read the file contents");
+    }
+
+    uint32_t padding = ((chunk.chunkLength + 3) & ~3) - chunk.chunkLength;
+    if (padding > 0) {
+        stream.Seek(padding, aiOrigin_CUR);
+    }
+
+    AI_SWAP4(header.length);
+    mBodyOffset = 12 + 8 + chunk.chunkLength + padding + 8;
+    if (header.length >= mBodyOffset) {
+        if (stream.Read(&chunk, sizeof(chunk), 1) != 1) {
+            throw DeadlyImportError("GLTF: Unable to read BIN chunk");
+        }
+
+        AI_SWAP4(chunk.chunkLength);
+        AI_SWAP4(chunk.chunkType);
+
+        if (chunk.chunkType != ChunkType_BIN) {
+            throw DeadlyImportError("GLTF: BIN chunk missing");
+        }
+
+        mBodyLength = chunk.chunkLength;
+    }
+    else {
+        mBodyOffset = mBodyLength = 0;
+    }
+}
+
+inline void Asset::Load(const std::string& pFile, bool isBinary)
 {
     mCurrentAssetDir.clear();
     int pos = std::max(int(pFile.rfind('/')), int(pFile.rfind('\\')));
@@ -1048,16 +1118,25 @@ inline void Asset::Load(const std::string& pFile)
         throw DeadlyImportError("GLTF: Could not open file for reading");
     }
 
-    mSceneLength = stream->FileSize();
-    mBodyLength = 0;
+    // is binary? then read the header
+    std::vector<char> sceneData;
+    if (isBinary) {
+        SetAsBinary(); // also creates the body buffer
+        ReadBinaryHeader(*stream, sceneData);
+    }
+    else {
+        mSceneLength = stream->FileSize();
+        mBodyLength = 0;
 
-    // read the scene data
 
-    std::vector<char> sceneData(mSceneLength + 1);
-    sceneData[mSceneLength] = '\0';
+        // read the scene data
 
-    if (stream->Read(&sceneData[0], 1, mSceneLength) != mSceneLength) {
-        throw DeadlyImportError("GLTF: Could not read the file contents");
+        sceneData.resize(mSceneLength + 1);
+        sceneData[mSceneLength] = '\0';
+
+        if (stream->Read(&sceneData[0], 1, mSceneLength) != mSceneLength) {
+            throw DeadlyImportError("GLTF: Could not read the file contents");
+        }
     }
 
 
@@ -1109,6 +1188,15 @@ inline void Asset::Load(const std::string& pFile)
         mDicts[i]->DetachFromDocument();
     }
 }
+
+inline void Asset::SetAsBinary()
+{
+    if (!mBodyBuffer) {
+        mBodyBuffer = buffers.Create("binary_glTF");
+        mBodyBuffer->MarkAsSpecial();
+    }
+}
+
 
 inline void Asset::ReadExtensionsUsed(Document& doc)
 {
