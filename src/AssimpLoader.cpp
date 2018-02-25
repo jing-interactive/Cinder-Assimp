@@ -383,6 +383,7 @@ namespace ai {
 	std::unordered_set<std::string>  getBoneNames( const aiScene* aiscene )
 	{
 		std::unordered_set<std::string> boneNames;
+#if 0
 		for( unsigned int m=0; m < aiscene->mNumMeshes; ++m ) {
 			aiMesh * mesh = aiscene->mMeshes[m];
 			for( unsigned int b=0; b < mesh->mNumBones; ++b) {
@@ -390,6 +391,11 @@ namespace ai {
 				boneNames.insert( name );
 			}
 		}
+#else
+        auto processNode = [](aiNode* node) {
+
+        };
+#endif
 		return boneNames;
 	}
 	
@@ -448,10 +454,10 @@ void AssimpLoader::loadScene( const aiScene* aiscene )
 	
 	if( !boneNames.empty() ) {
 		mRootNode = ai::generateNodeHierarchy( &mBones, root, boneNames );
+        mHasSkeleton = true;
 		if( aiscene->HasAnimations() ) {
 			ai::generateAnimationCurves( mBones, aiscene );
             mHasAnimations = true;
-            mHasSkeleton = true;
 		}
 	}
 	
