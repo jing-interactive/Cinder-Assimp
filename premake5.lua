@@ -250,5 +250,7 @@ solution "cinder-assimp"
             "assimp/code/glTF2Importer.cpp",
             "assimp/code/MakeVerboseFormat.cpp",
             "assimp/code/CalcTangentsProcess.cpp",
+            "assimp/code/ScaleProcess.cpp",
+            "assimp/code/EmbedTexturesProcess.cpp",
             "assimp/contrib/irrXML/*",
         }

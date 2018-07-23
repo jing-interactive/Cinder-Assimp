@@ -84,6 +84,7 @@ namespace model {
 		const std::shared_ptr<SurfacePool>&			getSurfacePool() { return mSurfacePool; }
 
         bool hasAnimations() const { return mHasAnimations; }
+        bool hasSkeleton() const { return mHasSkeleton; }
 
         ci::fs::path getModelPath() const { return mModelPath; }
 
