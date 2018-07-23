@@ -193,6 +193,8 @@ solution "cinder-assimp"
             "ASSIMP_BUILD_NO_OPTIMIZEGRAPH_PROCESS",
             "ASSIMP_BUILD_NO_SPLITBYBONECOUNT_PROCESS",
             "ASSIMP_BUILD_NO_DEBONE_PROCESS",
+            "ASSIMP_BUILD_NO_EMBEDTEXTURES_PROCESS",
+            "ASSIMP_BUILD_NO_GLOBALSCALE_PROCESS",
         }
 
         files {
@@ -206,6 +208,7 @@ solution "cinder-assimp"
             "assimp/code/PlyLoader.cpp",
             "assimp/code/BaseProcess.cpp",
             "assimp/code/FBXAnimation.cpp",
+            "assimp/code/EmbedTexturesProcess.cpp",
             "assimp/code/FBXBinaryTokenizer.cpp",
             "assimp/code/FBXConverter.cpp",
             "assimp/code/FBXDeformer.cpp",
@@ -232,6 +235,7 @@ solution "cinder-assimp"
             "assimp/code/ProcessHelper.cpp",
             "assimp/code/scene.cpp",
             "assimp/code/ScenePreprocessor.cpp",
+            "assimp/code/ScaleProcess.cpp",
             "assimp/code/SGSpatialSort.cpp",
             "assimp/code/SkeletonMeshBuilder.cpp",
             "assimp/code/SpatialSort.cpp",

@@ -3,7 +3,8 @@
 Open Asset Import Library (assimp)
 ---------------------------------------------------------------------------
 
-Copyright (c) 2006-2017, assimp team
+Copyright (c) 2006-2018, assimp team
+
 
 
 All rights reserved.
@@ -47,8 +48,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // internal headers
 #include "STLLoader.h"
-#include "ParsingUtils.h"
-#include "fast_atof.h"
+#include <assimp/ParsingUtils.h>
+#include <assimp/fast_atof.h>
 #include <memory>
 #include <assimp/IOSystem.hpp>
 #include <assimp/scene.h>
@@ -58,6 +59,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using namespace Assimp;
 
 namespace {
+    
 static const aiImporterDesc desc = {
     "Stereolithography (STL) Importer",
     "",
@@ -248,7 +250,7 @@ void STLImporter::LoadASCIIFile( aiNode *root ) {
         std::vector<unsigned int> meshIndices;
         aiMesh* pMesh = new aiMesh();
         pMesh->mMaterialIndex = 0;
-        meshIndices.push_back( meshes.size() );
+        meshIndices.push_back((unsigned int) meshes.size() );
         meshes.push_back(pMesh);
         aiNode *node = new aiNode;
         node->mParent = root;
@@ -284,14 +286,14 @@ void STLImporter::LoadASCIIFile( aiNode *root ) {
             if(!SkipSpacesAndLineEnd(&sz))
             {
                 // seems we're finished although there was no end marker
-                DefaultLogger::get()->warn("STL: unexpected EOF. \'endsolid\' keyword was expected");
+                ASSIMP_LOG_WARN("STL: unexpected EOF. \'endsolid\' keyword was expected");
                 break;
             }
             // facet normal -0.13 -0.13 -0.98
             if (!strncmp(sz,"facet",5) && IsSpaceOrNewLine(*(sz+5)) && *(sz + 5) != '\0')    {
 
                 if (faceVertexCounter != 3) {
-                    DefaultLogger::get()->warn("STL: A new facet begins but the old is not yet complete");
+                    ASSIMP_LOG_WARN("STL: A new facet begins but the old is not yet complete");
                 }
                 faceVertexCounter = 0;
                 normalBuffer.push_back(aiVector3D());
@@ -300,7 +302,7 @@ void STLImporter::LoadASCIIFile( aiNode *root ) {
                 sz += 6;
                 SkipSpaces(&sz);
                 if (strncmp(sz,"normal",6))    {
-                    DefaultLogger::get()->warn("STL: a facet normal vector was expected but not found");
+                    ASSIMP_LOG_WARN("STL: a facet normal vector was expected but not found");
                 } else {
                     if (sz[6] == '\0') {
                         throw DeadlyImportError("STL: unexpected EOF while parsing facet");
@@ -317,7 +319,7 @@ void STLImporter::LoadASCIIFile( aiNode *root ) {
                 }
             } else if (!strncmp(sz,"vertex",6) && ::IsSpaceOrNewLine(*(sz+6))) { // vertex 1.50000 1.50000 0.00000
                 if (faceVertexCounter >= 3) {
-                    DefaultLogger::get()->error("STL: a facet with more than 3 vertices has been found");
+                    ASSIMP_LOG_ERROR("STL: a facet with more than 3 vertices has been found");
                     ++sz;
                 } else {
                     if (sz[6] == '\0') {
@@ -350,7 +352,7 @@ void STLImporter::LoadASCIIFile( aiNode *root ) {
 
         if (positionBuffer.empty())    {
             pMesh->mNumFaces = 0;
-            throw DeadlyImportError("STL: ASCII file is empty or invalid; no data loaded");
+            ASSIMP_LOG_WARN("STL: mesh is empty or invalid; no data loaded");
         }
         if (positionBuffer.size() % 3 != 0)    {
             pMesh->mNumFaces = 0;
@@ -360,14 +362,23 @@ void STLImporter::LoadASCIIFile( aiNode *root ) {
             pMesh->mNumFaces = 0;
             throw DeadlyImportError("Normal buffer size does not match position buffer size");
         }
-        pMesh->mNumFaces = static_cast<unsigned int>(positionBuffer.size() / 3);
-        pMesh->mNumVertices = static_cast<unsigned int>(positionBuffer.size());
-        pMesh->mVertices = new aiVector3D[pMesh->mNumVertices];
-        memcpy(pMesh->mVertices, &positionBuffer[0].x, pMesh->mNumVertices * sizeof(aiVector3D));
-        positionBuffer.clear();
-        pMesh->mNormals = new aiVector3D[pMesh->mNumVertices];
-        memcpy(pMesh->mNormals, &normalBuffer[0].x, pMesh->mNumVertices * sizeof(aiVector3D));
-        normalBuffer.clear();
+
+        // only process positionbuffer when filled, else exception when accessing with index operator
+        // see line 353: only warning is triggered
+        // see line 373(now): access to empty positionbuffer with index operator forced exception
+        if (!positionBuffer.empty()) {
+            pMesh->mNumFaces = static_cast<unsigned int>(positionBuffer.size() / 3);
+            pMesh->mNumVertices = static_cast<unsigned int>(positionBuffer.size());
+            pMesh->mVertices = new aiVector3D[pMesh->mNumVertices];
+            memcpy(pMesh->mVertices, &positionBuffer[0].x, pMesh->mNumVertices * sizeof(aiVector3D));
+            positionBuffer.clear();
+        }
+        // also only process normalBuffer when filled, else exception when accessing with index operator
+        if (!normalBuffer.empty()) {
+            pMesh->mNormals = new aiVector3D[pMesh->mNumVertices];
+            memcpy(pMesh->mNormals, &normalBuffer[0].x, pMesh->mNumVertices * sizeof(aiVector3D));
+            normalBuffer.clear();
+        }
 
         // now copy faces
         addFacesToMesh(pMesh);
@@ -383,7 +394,7 @@ void STLImporter::LoadASCIIFile( aiNode *root ) {
         pScene->mMeshes[ i ] = meshes[i];
     }
 
-    root->mNumChildren = nodes.size();
+    root->mNumChildren = (unsigned int) nodes.size();
     root->mChildren = new aiNode*[ root->mNumChildren ];
     for ( size_t i=0; i<nodes.size(); ++i ) {
         root->mChildren[ i ] = nodes[ i ];
@@ -416,7 +427,7 @@ bool STLImporter::LoadBinaryFile()
 
             // read the default vertex color for facets
             bIsMaterialise = true;
-            DefaultLogger::get()->info("STL: Taking code path for Materialise files");
+            ASSIMP_LOG_INFO("STL: Taking code path for Materialise files");
             const ai_real invByte = (ai_real)1.0 / ( ai_real )255.0;
             clrColorDefault.r = (*sz2++) * invByte;
             clrColorDefault.g = (*sz2++) * invByte;
@@ -443,28 +454,47 @@ bool STLImporter::LoadBinaryFile()
 
     pMesh->mNumVertices = pMesh->mNumFaces*3;
 
-    aiVector3D* vp,*vn;
-    vp = pMesh->mVertices = new aiVector3D[pMesh->mNumVertices];
-    vn = pMesh->mNormals = new aiVector3D[pMesh->mNumVertices];
+    
+    aiVector3D *vp = pMesh->mVertices = new aiVector3D[pMesh->mNumVertices];
+    aiVector3D *vn = pMesh->mNormals = new aiVector3D[pMesh->mNumVertices];
 
-    for (unsigned int i = 0; i < pMesh->mNumFaces;++i) {
-
+    typedef aiVector3t<float> aiVector3F;
+    aiVector3F* theVec;
+    aiVector3F theVec3F;
+    
+    for ( unsigned int i = 0; i < pMesh->mNumFaces; ++i ) {
         // NOTE: Blender sometimes writes empty normals ... this is not
         // our fault ... the RemoveInvalidData helper step should fix that
-        *vn = *((aiVector3D*)sz);
-        sz += sizeof(aiVector3D);
+
+        // There's one normal for the face in the STL; use it three times
+        // for vertex normals
+        theVec = (aiVector3F*) sz;
+        ::memcpy( &theVec3F, theVec, sizeof(aiVector3F) );
+        vn->x = theVec3F.x; vn->y = theVec3F.y; vn->z = theVec3F.z;
         *(vn+1) = *vn;
         *(vn+2) = *vn;
+        ++theVec;
         vn += 3;
 
-        *vp++ = *((aiVector3D*)sz);
-        sz += sizeof(aiVector3D);
+        // vertex 1
+        ::memcpy( &theVec3F, theVec, sizeof(aiVector3F) );
+        vp->x = theVec3F.x; vp->y = theVec3F.y; vp->z = theVec3F.z;
+        ++theVec;
+        ++vp;
 
-        *vp++ = *((aiVector3D*)sz);
-        sz += sizeof(aiVector3D);
+        // vertex 2
+        ::memcpy( &theVec3F, theVec, sizeof(aiVector3F) );
+        vp->x = theVec3F.x; vp->y = theVec3F.y; vp->z = theVec3F.z;
+        ++theVec;
+        ++vp;
 
-        *vp++ = *((aiVector3D*)sz);
-        sz += sizeof(aiVector3D);
+        // vertex 3
+        ::memcpy( &theVec3F, theVec, sizeof(aiVector3F) );
+        vp->x = theVec3F.x; vp->y = theVec3F.y; vp->z = theVec3F.z;
+        ++theVec;
+        ++vp;
+        
+        sz = (const unsigned char*) theVec;
 
         uint16_t color = *((uint16_t*)sz);
         sz += 2;
@@ -479,7 +509,7 @@ bool STLImporter::LoadBinaryFile()
                     *pMesh->mColors[0]++ = this->clrColorDefault;
                 pMesh->mColors[0] -= pMesh->mNumVertices;
 
-                DefaultLogger::get()->info("STL: Mesh has vertex colors");
+                ASSIMP_LOG_INFO("STL: Mesh has vertex colors");
             }
             aiColor4D* clr = &pMesh->mColors[0][i*3];
             clr->a = 1.0;
@@ -504,6 +534,12 @@ bool STLImporter::LoadBinaryFile()
 
     // now copy faces
     addFacesToMesh(pMesh);
+
+    // add all created meshes to the single node
+    pScene->mRootNode->mNumMeshes = pScene->mNumMeshes;
+    pScene->mRootNode->mMeshes = new unsigned int[pScene->mNumMeshes];
+    for (unsigned int i = 0; i < pScene->mNumMeshes; i++)
+        pScene->mRootNode->mMeshes[i] = i;
 
     if (bIsMaterialise && !pMesh->mColors[0])
     {

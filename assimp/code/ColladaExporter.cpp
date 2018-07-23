@@ -2,7 +2,8 @@
 Open Asset Import Library (assimp)
 ----------------------------------------------------------------------
 
-Copyright (c) 2006-2017, assimp team
+Copyright (c) 2006-2018, assimp team
+
 
 All rights reserved.
 
@@ -43,17 +44,17 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef ASSIMP_BUILD_NO_COLLADA_EXPORTER
 
 #include "ColladaExporter.h"
-#include "Bitmap.h"
-#include "fast_atof.h"
+#include <assimp/Bitmap.h>
+#include <assimp/fast_atof.h>
 #include <assimp/SceneCombiner.h>
-#include "StringUtils.h"
-#include "XMLTools.h"
+#include <assimp/StringUtils.h>
+#include <assimp/XMLTools.h>
 #include <assimp/DefaultIOSystem.h>
 #include <assimp/IOSystem.hpp>
 #include <assimp/Exporter.hpp>
 #include <assimp/scene.h>
 
-#include "Exceptional.h"
+#include <assimp/Exceptional.h>
 
 #include <memory>
 #include <ctime>
@@ -1268,7 +1269,8 @@ void ColladaExporter::WriteAnimationLibrary(size_t pIndex)
 	
 	mOutput << startstr << "<animation id=\"" + idstrEscaped + "\" name=\"" + animation_name_escaped + "\">" << endstr;
 	PushTag();
-	
+
+    std::string node_idstr;
 	for (size_t a = 0; a < anim->mNumChannels; ++a) {
 		const aiNodeAnim * nodeAnim = anim->mChannels[a];
 		
@@ -1276,11 +1278,13 @@ void ColladaExporter::WriteAnimationLibrary(size_t pIndex)
 		if ( nodeAnim->mNumPositionKeys != nodeAnim->mNumScalingKeys ||  nodeAnim->mNumPositionKeys != nodeAnim->mNumRotationKeys ) continue;
 		
 		{
-			const std::string node_idstr = nodeAnim->mNodeName.data + std::string("_matrix-input");
+            node_idstr.clear();
+            node_idstr += nodeAnim->mNodeName.data;
+            node_idstr += std::string( "_matrix-input" );
 
 			std::vector<ai_real> frames;
 			for( size_t i = 0; i < nodeAnim->mNumPositionKeys; ++i) {
-				frames.push_back(nodeAnim->mPositionKeys[i].mTime);
+				frames.push_back(static_cast<ai_real>(nodeAnim->mPositionKeys[i].mTime));
 			}
 			
 			WriteFloatArray( node_idstr , FloatType_Time, (const ai_real*) frames.data(), frames.size());
@@ -1288,12 +1292,14 @@ void ColladaExporter::WriteAnimationLibrary(size_t pIndex)
 		}
 		
 		{
-			const std::string node_idstr = nodeAnim->mNodeName.data + std::string("_matrix-output");
+            node_idstr.clear();
+
+            node_idstr += nodeAnim->mNodeName.data;
+            node_idstr += std::string("_matrix-output");
 			
 			std::vector<ai_real> keyframes;
 			keyframes.reserve(nodeAnim->mNumPositionKeys * 16);
 			for( size_t i = 0; i < nodeAnim->mNumPositionKeys; ++i) {
-				
 				aiVector3D Scaling = nodeAnim->mScalingKeys[i].mValue;
 				aiMatrix4x4 ScalingM;  // identity
 				ScalingM[0][0] = Scaling.x; ScalingM[1][1] = Scaling.y; ScalingM[2][2] = Scaling.z;
@@ -1309,7 +1315,7 @@ void ColladaExporter::WriteAnimationLibrary(size_t pIndex)
 				// Combine the above transformations
 				aiMatrix4x4 mat = TranslationM * RotationM * ScalingM;
 				
-				for( size_t j = 0; j < 4; ++j) {
+				for( unsigned int j = 0; j < 4; ++j) {
 					keyframes.insert(keyframes.end(), mat[j], mat[j] + 4);
                 }
 			}
@@ -1360,7 +1366,6 @@ void ColladaExporter::WriteAnimationLibrary(size_t pIndex)
 			PopTag();
 			mOutput << startstr << "</source>" << endstr;
 		}
-		
 	}
 	
 	for (size_t a = 0; a < anim->mNumChannels; ++a) {
